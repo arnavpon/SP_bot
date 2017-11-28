@@ -6,7 +6,8 @@ from scope import Scope
 
 # client = MongoClient('mongodb://localhost:27017/')  # connect to mongoDB @ default port of localhost
 # db = client.patients  # specify the DB to use ('patients')
-db = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to MongoDB
+client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/")  # /patients connect to MongoDB
+db = client.patients
 print("Connected to db: {} with collections = {}".format(db, db.collection_names()))
 
 # how to handle spelling errors for input ROS objects? Possibility: if question is ID'd as pertaining to ROS,
