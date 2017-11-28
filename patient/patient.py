@@ -4,12 +4,14 @@ from bson.objectid import ObjectId
 from scope import Scope
 
 
-for k, v in os.environ.items(): #a
+for k, v in os.environ.items():
     print(k, ":", v)
 
-client = MongoClient('mongodb://localhost:27017/')  # connect to mongoDB @ default port of localhost
+#client = MongoClient('mongodb://localhost:27017/')  # connect to mongoDB @ default port of localhost
 
-#client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/")  # /patients ** connect to MongoDB
+db_port = os.environ.get("MONGODB_SERVICE_PORT_MONGO")
+db_host = os.environ.get("MONGODB_SERVICE_HOST")
+client = MongoClient("mongodb://arnavpon:warhammeR10@{}/{}".format(db_host, db_port))  # connect to MongoDB
 db = client.patients  # specify the DB to access (patients)
 # print("Connected to db: {} with collections = {}".format(db, db.collection_names()))
 
