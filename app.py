@@ -1,14 +1,20 @@
-# ERROR: don't know how to run your application.
-# Please set either APP_MODULE, APP_FILE or APP_SCRIPT environment variables, or create a file 'app.py' to launch your application.
-# need something
+# lookup how to use app.py file - server instance is created by pod, how do we get requests from server?
+# OR do we still need to restart our own server?
+# simplify - try to create a simple runtime that displays the posted data
+# (1) add a method to handle GET request & return some HTML; see if HTML is displayed when we visit site in browser!
 
+import os
 import json
 import activity
 from tornado import ioloop, web
 from datetime import datetime
 from authentication import Authentication
 
-hostPort = 8000
+for k, v in os.environ.items():
+    print("[environ] {}: {}".format(k, v))
+
+ip = 0
+host_port = 8000
 CONVERSATIONS = dict()  # KEY = conversationID, VALUE = dict w/ KEYS of "position", "patient"
 authenticator = Authentication()  # initialize authentication object
 
@@ -54,9 +60,9 @@ class MainHandler(web.RequestHandler):
 
 
 if __name__ == '__main__':
-    print("[{}] Starting HTTP server @ port {}...".format(datetime.now(), hostPort))
+    print("[{}] Starting HTTP server @ IP address {} & Port {}...".format(datetime.now(), ip, host_port))
     app = web.Application([
         (r"/", MainHandler),
     ])
-    app.listen(hostPort)  # listen @ localhost port 8000
+    app.listen(host_port)  # listen @ localhost port 8000
     ioloop.IOLoop.instance().start()  # start the main event loop
