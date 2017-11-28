@@ -2,11 +2,11 @@
 
 import requests
 import json
+from random import randint
+from pprint import pprint
 from patient.patient import Patient
 from LUIS import LUIS
 from feedback import FeedbackModule
-from random import randint
-from pprint import pprint
 
 UPDATED_POSITION = None  # indicator used to prevent backwards actions in conversation flow
 

@@ -1,8 +1,8 @@
 import json
 import activity
-from authentication import Authentication
 from tornado import ioloop, web
 from datetime import datetime
+from authentication import Authentication
 
 hostPort = 8000
 CONVERSATIONS = dict()  # KEY = conversationID, VALUE = dict w/ KEYS of "position", "patient"
