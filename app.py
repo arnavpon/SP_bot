@@ -13,8 +13,8 @@ from authentication import Authentication
 for k, v in os.environ.items():
     print("[environ] {}: {}".format(k, v))
 
-ip = 0
-host_port = 8000
+ip = os.environ.get("SP_BOT_SERVICE_HOST", None)
+host_port = os.environ.get("SP_BOT_SERVICE_PORT", 8080)
 CONVERSATIONS = dict()  # KEY = conversationID, VALUE = dict w/ KEYS of "position", "patient"
 authenticator = Authentication()  # initialize authentication object
 
@@ -60,9 +60,9 @@ class MainHandler(web.RequestHandler):
 
 
 if __name__ == '__main__':
-    print("[{}] Starting HTTP server @ IP address {} & Port {}...".format(datetime.now(), ip, host_port))
+    print("\n[{}] Starting HTTP server @ IP address {} & Port {}...".format(datetime.now(), ip, host_port))
     app = web.Application([
         (r"/", MainHandler),
-    ])
+    ])  # routes requests to url 'root/' to the MainHandler class
     app.listen(host_port)  # listen @ localhost port 8000
     ioloop.IOLoop.instance().start()  # start the main event loop
