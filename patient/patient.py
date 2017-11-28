@@ -4,7 +4,7 @@ from bson.objectid import ObjectId
 from scope import Scope
 
 
-for k, v in os.environ.items():
+for k, v in os.environ.items(): #a
     print(k, ":", v)
 
 client = MongoClient('mongodb://localhost:27017/')  # connect to mongoDB @ default port of localhost
