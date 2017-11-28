@@ -1,8 +1,3 @@
-# lookup how to use app.py file - server instance is created by pod, how do we get requests from server?
-# OR do we still need to restart our own server?
-# simplify - try to create a simple runtime that displays the posted data
-# (1) add a method to handle GET request & return some HTML; see if HTML is displayed when we visit site in browser!
-
 import os
 import json
 import activity
@@ -18,7 +13,7 @@ authenticator = Authentication()  # initialize authentication object
 class MainHandler(web.RequestHandler):
     def get(self, *args, **kwargs):  # incoming GET request (test)
         print("\nParsing GET request...")
-        self.write("Hello, world!")
+        self.write("SP Bot received GET request...")
 
     def post(self, *args, **kwargs):  # incoming POST request
         print("\n[{}] Received POST Request from client...".format(datetime.now()))
@@ -64,6 +59,6 @@ if __name__ == '__main__':
     print("[{}] Starting HTTP server @ IP {} & Port {}...".format(datetime.now(), ip, host_port))
     app = web.Application([
         (r"/", MainHandler),
-    ])  # routes requests to url 'root/' to the MainHandler class
+    ])  # routes requests to the root url '/' -> the MainHandler class
     app.listen(host_port)  # listen @ localhost port (default is 8000 unless specified in os.environ variable)
     ioloop.IOLoop.instance().start()  # start the main event loop

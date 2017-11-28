@@ -4,8 +4,9 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from scope import Scope
 
-client = MongoClient('mongodb://localhost:27017/')  # connect to mongoDB @ default port
-db = client.patients  # specify the DB to use ('Patients')
+# client = MongoClient('mongodb://localhost:27017/')  # connect to mongoDB @ default port of localhost
+client = MongoClient('mongodb://user:pwd@ip/')  # connect to remove mongoDB server
+db = client.patients  # specify the DB to use ('patients')
 
 # how to handle spelling errors for input ROS objects? Possibility: if question is ID'd as pertaining to ROS,
 # searches for the symptom w/ the spelling that most closely matches the input.
