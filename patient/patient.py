@@ -1,16 +1,13 @@
 # Class Definition - "Patient" class, a model for the SP that houses all historical information
 
-import os
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from scope import Scope
 
 # client = MongoClient('mongodb://localhost:27017/')  # connect to mongoDB @ default port of localhost
-
-db_host = ""
-db_port = ""
-client = MongoClient('mongodb://user:password@{}/{}'.format(db_host, db_port))  # connect to remote mongoDB server
-db = client.patients  # specify the DB to use ('patients')
+# db = client.patients  # specify the DB to use ('patients')
+db = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to MongoDB
+print("Connected to db: {} with collections = {}".format(db, db.collection_names()))
 
 # how to handle spelling errors for input ROS objects? Possibility: if question is ID'd as pertaining to ROS,
 # searches for the symptom w/ the spelling that most closely matches the input.
