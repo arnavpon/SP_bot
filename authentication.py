@@ -3,7 +3,7 @@
 import requests
 import jwt
 import json
-from jwt.algorithms import RSAAlgorithm
+# from jwt.algorithms import RSAAlgorithm
 from datetime import datetime, timedelta
 from pprint import pprint
 
@@ -41,7 +41,8 @@ class Authentication:
 
         token = auth_header[7:]  # strip the "Bearer" & access the token
         try:  # parse the JWT (using the JWK as the secret) to obtain the contained JSON data
-            secret = RSAAlgorithm.from_jwk(json.dumps(self.__jwk[0]))  # create secret by picking a JWK from list
+            return 200  # ***
+            # secret = RSAAlgorithm.from_jwk(json.dumps(self.__jwk[0]))  # create secret by picking a JWK from list
             connector_iss = "https://api.botframework.com"  # *** CONNECTOR only - use when we go live
             emulator_iss = self.__jwk[0]['issuer']  # *** EMULATOR only - get issuer
             # emulator_iss = "https://sts.windows.net/f8cdef31-a31e-4b4a-93e4-5f571e91255a/"  # emulator v3.2
