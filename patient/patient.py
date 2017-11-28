@@ -8,7 +8,7 @@ client = MongoClient('mongodb://localhost:27017/')  # connect to mongoDB @ defau
 
 #client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/")  # /patients ** connect to MongoDB
 db = client.patients  # specify the DB to access (patients)
-print("Connected to db: {} with collections = {}".format(db, db.collection_names()))
+# print("Connected to db: {} with collections = {}".format(db, db.collection_names()))
 
 # how to handle spelling errors for input ROS objects? Possibility: if question is ID'd as pertaining to ROS,
 # searches for the symptom w/ the spelling that most closely matches the input.
