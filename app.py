@@ -5,9 +5,6 @@ from tornado import ioloop, web
 from datetime import datetime
 from authentication import Authentication
 
-for k, v in os.environ.items():
-    print(k, ":", v)
-
 ip = os.environ.get("SP_BOT_SERVICE_HOST", None)  # access OpenShift environment host IP
 host_port = os.environ.get("SP_BOT_SERVICE_PORT", 8080)  # access OpenShift environment PORT
 CONVERSATIONS = dict()  # KEY = conversationID, VALUE = dict w/ KEYS of "position", "patient"
