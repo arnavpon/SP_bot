@@ -10,15 +10,16 @@ from tornado import ioloop, web
 from datetime import datetime
 from authentication import Authentication
 
-for k, v in os.environ.items():
-    print("[environ] {}: {}".format(k, v))
-
-ip = os.environ.get("SP_BOT_SERVICE_HOST", None)
-host_port = os.environ.get("SP_BOT_SERVICE_PORT", 8080)
+ip = os.environ.get("SP_BOT_SERVICE_HOST", None)  # access OpenShift environment host IP
+host_port = os.environ.get("SP_BOT_SERVICE_PORT", 8080)  # access OpenShift environment PORT
 CONVERSATIONS = dict()  # KEY = conversationID, VALUE = dict w/ KEYS of "position", "patient"
 authenticator = Authentication()  # initialize authentication object
 
 class MainHandler(web.RequestHandler):
+    def get(self, *args, **kwargs):  # incoming GET request (test)
+        print("\nParsing GET request...")
+        self.write("Hello, world!")
+
     def post(self, *args, **kwargs):  # incoming POST request
         print("\n[{}] Received POST Request from client...".format(datetime.now()))
 
@@ -60,9 +61,9 @@ class MainHandler(web.RequestHandler):
 
 
 if __name__ == '__main__':
-    print("\n[{}] Starting HTTP server @ IP address {} & Port {}...".format(datetime.now(), ip, host_port))
+    print("[{}] Starting HTTP server @ IP {} & Port {}...".format(datetime.now(), ip, host_port))
     app = web.Application([
         (r"/", MainHandler),
     ])  # routes requests to url 'root/' to the MainHandler class
-    app.listen(host_port)  # listen @ localhost port 8000
+    app.listen(host_port)  # listen @ localhost port (default is 8000 unless specified in os.environ variable)
     ioloop.IOLoop.instance().start()  # start the main event loop
