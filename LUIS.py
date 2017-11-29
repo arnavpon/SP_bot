@@ -105,7 +105,7 @@ class LUIS:
         if (response.error):  # check for error
             print("[Error] {}".format(response.error))
         else:  # successful web request - get intents & entities for user input
-            json_data = json.loads(response.body)  # get JSON dict
+            json_data = json.loads(response.body.decode('utf-8'))  # get JSON dict from HTTP body
             self.__topIntent = Intent(json_data.get('topScoringIntent', None))  # access the HIGHEST probability intent
             self.__intents = [Intent(i) for i in json_data.get('intents', [])]  # access each intent & wrap it in class
             self.__entities = [Entity(e) for e in json_data.get('entities', [])]  # access each intent & wrap in class
@@ -139,15 +139,14 @@ class LUIS:
         # How do we clean up the 'conversations' DB once the conversation is over?
         # (2) Could remove all conversations when server stops, but server will constantly run so this isn't great
         #     - best bet is to delete conversation when SESSION is closed. How can server recognize that?
-        #     - be careful not to remove the logged feedback!
+        #     - may need to create a SESSION on the server, get signal when session is terminated...
+        #     - be careful not to remove the logged feedback, only the conversation!
+        #     - feedback is logged to the convo collection, so if feedback is present when session closes...
 
         # Objectives (V 1.0)
-        # - 1) Test newly added scripts & improve until performance is satisfying on each script.
-
         # - 2) Determine how to CONNECT bot to the Facebook messenger channel (done via My Bots page)
         #      - refer to FB messenger documentation:
         #      - 1) Modify bot to comply w/ FB guidelines
-        #      - 2) Obtain hosting for bot (Mongo + Python server)
         #      - 3) Submit fully compliant bot -> FB for publishing
         #      - need endpoint URL & hosting setup BEFORE we can connect to the channel
         #      After connecting, update 'Authentication.py' to include ENDORSEMENTS for channel???

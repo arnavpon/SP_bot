@@ -41,7 +41,7 @@ class Authentication:
 
         token = auth_header[7:]  # strip the "Bearer" & access the token
         try:  # parse the JWT (using the JWK as the secret) to obtain the contained JSON data
-            key_index = 1  # index of one of the keys in self.__jwk
+            key_index = 1 if len(self.__jwk) > 1 else -1  # index of one of the keys in self.__jwk
             secret = RSAAlgorithm.from_jwk(json.dumps(self.__jwk[key_index]))  # create secret by picking JWK from list
             connector_iss = "https://api.botframework.com"  # *** CONNECTOR only - use when we go live
             emulator_iss = self.__jwk[key_index]['issuer']  # *** EMULATOR only - get issuer

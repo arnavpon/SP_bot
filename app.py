@@ -15,9 +15,7 @@ class MainHandler(web.RequestHandler):
         print("\nParsing GET request...")
 
         # To-Do:
-        # - use NGROK/emulator to send & receive test message to cloud bot  [+2]
-        # - modify authentication code to handle remote?!
-        # - JWT signature verification is failing w/ 'DecodeError' <= lookup
+        # - bot is not communicating with LUIS
 
         from pymongo import MongoClient
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
