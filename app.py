@@ -15,7 +15,6 @@ class MainHandler(web.RequestHandler):
         print("\nParsing GET request...")
 
         # To-Do:
-        # - read on how to port local mongo setup -> cloud
         # - use this method to iterate through mongo once hosted & read through documents to make sure they moved [+2]
         # - configure NGROK [+1]
         # - use NGROK/emulator to send & receive test message to cloud bot  [+2]
@@ -23,10 +22,14 @@ class MainHandler(web.RequestHandler):
         from pymongo import MongoClient
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
         db = client.patients  # specify the DATABASE to access (patients)
+        collections = db.collection_names()
+        for name in collections:
+            print("Collection: {}".format(name))
+            for r in db[name].find():
+                print("   ", r)
         for r in db.test.find():  # insert into a COLLECTION
-            self.write("[TEST] Record: {}\n".format(r))
+            self.write("[TEST] Record: {}<br>".format(r))
         client.close()
-        #self.write("Inserted current datetime {} into DB...".format(datetime.now()))
 
     def post(self, *args, **kwargs):  # incoming POST request
         print("\n[{}] Received POST Request from client...".format(datetime.now()))
