@@ -15,7 +15,7 @@ class MainHandler(web.RequestHandler):
         print("\nParsing GET request...")
 
         from pymongo import MongoClient
-        client = MongoClient('mongodb://localhost:27017/')  # connect to mongoDB @ default port of localhost
+        client = MongoClient('mongodb://arnavpon:warhammeR10@localhost:27017/')  # connect to mongoDB
         db = client.patients  # specify the DB to access (patients)
         print("Inserted date {}...".format(datetime.now()))
         db.insert_one({"date": datetime.now()})
