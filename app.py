@@ -13,7 +13,13 @@ authenticator = Authentication()  # initialize authentication object
 class MainHandler(web.RequestHandler):
     def get(self, *args, **kwargs):  # incoming GET request (test)
         print("\nParsing GET request...")
-        self.write("SP Bot received GET request...")
+
+        from pymongo import MongoClient
+        client = MongoClient('mongodb://localhost:27017/')  # connect to mongoDB @ default port of localhost
+        db = client.patients  # specify the DB to access (patients)
+        print("Inserting date {}...".format(datetime.now()))
+        db.insert_one({"date": datetime.now()})
+        self.write("Inserted current datetime {} into DB...".format(datetime.now()))
 
     def post(self, *args, **kwargs):  # incoming POST request
         print("\n[{}] Received POST Request from client...".format(datetime.now()))
