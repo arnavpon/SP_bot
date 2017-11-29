@@ -16,8 +16,8 @@ class MainHandler(web.RequestHandler):
 
         # To-Do:
         # - use NGROK/emulator to send & receive test message to cloud bot  [+2]
-        # - JSON.loads() throws error on POST request - data is in 'bytes', not str
         # - modify authentication code to handle remote?!
+        # - JWT signature verification is failing w/ 'DecodeError' <= lookup
 
         from pymongo import MongoClient
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
@@ -36,7 +36,6 @@ class MainHandler(web.RequestHandler):
         # (1) Decode the POST data -> a dictionary:
         print("\nParsing POST request...")
         json_data = self.request.body.decode('utf-8')  # obtain POST body from request, decode from bytes -> Str
-        print(json_data)
         post_body = json.loads(json_data)  # convert JSON data -> dict
 
         # (2) Authenticate incoming message & generate a response header:

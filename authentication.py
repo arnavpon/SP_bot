@@ -41,9 +41,10 @@ class Authentication:
 
         token = auth_header[7:]  # strip the "Bearer" & access the token
         try:  # parse the JWT (using the JWK as the secret) to obtain the contained JSON data
-            secret = RSAAlgorithm.from_jwk(json.dumps(self.__jwk[0]))  # create secret by picking a JWK from list
+            key_index = 1  # index of one of the keys in self.__jwk
+            secret = RSAAlgorithm.from_jwk(json.dumps(self.__jwk[key_index]))  # create secret by picking JWK from list
             connector_iss = "https://api.botframework.com"  # *** CONNECTOR only - use when we go live
-            emulator_iss = self.__jwk[0]['issuer']  # *** EMULATOR only - get issuer
+            emulator_iss = self.__jwk[key_index]['issuer']  # *** EMULATOR only - get issuer
             # emulator_iss = "https://sts.windows.net/f8cdef31-a31e-4b4a-93e4-5f571e91255a/"  # emulator v3.2
             # emulator_iss = "https://sts.windows.net/d6d49420-f39b-4df7-a1dc-d59a935871db/"  # *** EMULATOR v3.1
             token = jwt.decode(token, secret,
@@ -66,7 +67,7 @@ class Authentication:
             # token_url = token.get("serviceUrl", None) # *** CONNECTOR only
             # if token_url != service_url: return 403  # *** CONNECTOR only
             app_id = token.get("appid", None)  # *** EMULATOR only - after update, appid is no longer in token!
-            app_id = token.get("azp", None)  # after update
+            app_id = token.get("azp", None)  # after update access the 'azp' property
             if app_id != self.__microsoft_app_id: return 403  # *** EMULATOR only
         return 200  # if all checks are passed, return 200 OK status
 
