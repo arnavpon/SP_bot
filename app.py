@@ -13,19 +13,15 @@ authenticator = Authentication()  # initialize authentication object
 class MainHandler(web.RequestHandler):
     def get(self, *args, **kwargs):  # incoming GET request (test)
         print("\nParsing GET request...")
-
-        # To-Do:
-        # - bot is not communicating with LUIS
-
         from pymongo import MongoClient
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
         db = client.patients  # specify the DATABASE to access (patients)
         collections = db.collection_names()
         for name in collections:
-            print("\nCollection: {}".format(name))
-            self.write("Collection: {}<br>".format(name))
-            for r in db[name].find():
-                print("   ", r)
+            if name == "conversations":
+                self.write("Conversations:<br>".format(name))
+                for r in db[name].find():  # display active conversations
+                    print("   ", r)
         client.close()
 
     def post(self, *args, **kwargs):  # incoming POST request
