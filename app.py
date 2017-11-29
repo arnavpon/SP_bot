@@ -27,7 +27,7 @@ class MainHandler(web.RequestHandler):
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
         db = client.patients  # specify the DATABASE to access (patients)
         for r in db.test.find():  # insert into a COLLECTION
-            self.write("[TEST] Record: ", r)
+            self.write("[TEST] Record: {}".format(r))
         client.close()
         #self.write("Inserted current datetime {} into DB...".format(datetime.now()))
 
