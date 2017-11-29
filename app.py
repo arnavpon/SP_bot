@@ -15,10 +15,11 @@ class MainHandler(web.RequestHandler):
         print("\nParsing GET request...")
 
         from pymongo import MongoClient
-        client = MongoClient('mongodb://arnavpon:warhammeR10@localhost:27017/')  # connect to mongoDBs
+        client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
         db = client.patients  # specify the DB to access (patients)
         print("Inserted date {}...".format(datetime.now()))
         db.insert_one({"date": datetime.now()})
+        client.close()
         self.write("Inserted current datetime {} into DB...".format(datetime.now()))
 
     def post(self, *args, **kwargs):  # incoming POST request
