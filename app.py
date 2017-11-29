@@ -16,9 +16,11 @@ class MainHandler(web.RequestHandler):
 
         from pymongo import MongoClient
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
+        print("Client Type: ", type(client))
         db = client.patients  # specify the DB to access (patients)
-        print("Inserted date {}...".format(datetime.now()))
-        db.insert_one({"date": datetime.now()})
+        print("DB Type: ", type(db))
+        #print("Inserted date {}...".format(datetime.now()))
+        #db.insert_one({"date": datetime.now()})
         client.close()
         self.write("Inserted current datetime {} into DB...".format(datetime.now()))
 
