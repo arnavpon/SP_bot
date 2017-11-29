@@ -24,7 +24,8 @@ class MainHandler(web.RequestHandler):
         db = client.patients  # specify the DATABASE to access (patients)
         collections = db.collection_names()
         for name in collections:
-            print("Collection: {}".format(name))
+            print("\nCollection: {}".format(name))
+            self.write("Collection: {}<br>".format(name))
             for r in db[name].find():
                 print("   ", r)
         for r in db.test.find():  # insert into a COLLECTION

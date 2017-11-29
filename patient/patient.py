@@ -6,6 +6,12 @@ client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # conne
 db = client.patients  # specify the DATABASE to access ("patients")
 print("Connected to db: {} with collections = {}".format(db, db.collection_names()))  # *** success
 
+db.test.drop()  # drop & clear
+db.social_history.drop()  # drop & clear
+db.family_members.drop() # drop
+db.scopes.drop()  # drop
+db.conversations.delete_many({})  # clear, don't drop
+
 # how to handle spelling errors for input ROS objects? Possibility: if question is ID'd as pertaining to ROS,
 # searches for the symptom w/ the spelling that most closely matches the input.
 
