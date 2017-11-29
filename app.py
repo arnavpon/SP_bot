@@ -15,7 +15,6 @@ class MainHandler(web.RequestHandler):
         print("\nParsing GET request...")
 
         # To-Do:
-        # - use this method to iterate through mongo once hosted & read through documents to make sure they moved [+2]
         # - configure NGROK [+1]
         # - use NGROK/emulator to send & receive test message to cloud bot  [+2]
 
@@ -28,8 +27,6 @@ class MainHandler(web.RequestHandler):
             self.write("Collection: {}<br>".format(name))
             for r in db[name].find():
                 print("   ", r)
-        for r in db.test.find():  # insert into a COLLECTION
-            self.write("[TEST] Record: {}<br>".format(r))
         client.close()
 
     def post(self, *args, **kwargs):  # incoming POST request
