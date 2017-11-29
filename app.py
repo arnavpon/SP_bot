@@ -26,10 +26,10 @@ class MainHandler(web.RequestHandler):
         from pymongo import MongoClient
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
         db = client.patients  # specify the DATABASE to access (patients)
-        print("Inserted date {}...".format(datetime.now()))
-        db.test.insert_one({"date": datetime.now()})  # insert into a COLLECTION
+        for r in db.test.find():  # insert into a COLLECTION
+            self.write("[TEST] Record: ", r)
         client.close()
-        self.write("Inserted current datetime {} into DB...".format(datetime.now()))
+        #self.write("Inserted current datetime {} into DB...".format(datetime.now()))
 
     def post(self, *args, **kwargs):  # incoming POST request
         print("\n[{}] Received POST Request from client...".format(datetime.now()))
