@@ -14,6 +14,7 @@ class MainHandler(web.RequestHandler):
     def get(self, *args, **kwargs):  # incoming GET request (test)
         print("\nParsing GET request...")
 
+
         from pymongo import MongoClient
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
         db = client.patients  # specify the DATABASE to access (patients)
