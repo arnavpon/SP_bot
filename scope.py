@@ -1,6 +1,4 @@
-# Defines all scope-related logic
-
-class Scope:
+class Scope:  # defines all scope-related logic
 
     # --- CATEGORIES ---
     SCOPE = -1  # highest level in hierarchy

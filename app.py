@@ -5,6 +5,9 @@ from tornado import ioloop, web
 from datetime import datetime
 from authentication import Authentication
 
+for k, v in os.environ.items():
+    print(k, ":", v)
+
 ip = os.environ.get("SP_BOT_SERVICE_HOST", None)  # access OpenShift environment host IP
 host_port = os.environ.get("SP_BOT_SERVICE_PORT", 8080)  # access OpenShift environment PORT
 CONVERSATIONS = dict()  # KEY = conversationID, VALUE = dict w/ KEYS of "position", "patient"
@@ -14,6 +17,11 @@ class MainHandler(web.RequestHandler):
     def get(self, *args, **kwargs):  # incoming GET request (test)
         print("\nParsing GET request...")
 
+        # To-Do:
+        # - read on how to port local mongo setup -> cloud
+        # - use this method to iterate through mongo once hosted & read through documents to make sure they moved [+2]
+        # - configure NGROK [+1]
+        # - use NGROK/emulator to send & receive test message to cloud bot  [+2]
 
         from pymongo import MongoClient
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB

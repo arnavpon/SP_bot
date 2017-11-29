@@ -2,7 +2,6 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from scope import Scope
 
-#client = MongoClient('mongodb://localhost:27017/')  # connect to mongoDB @ default port of localhost
 client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
 db = client.patients  # specify the DATABASE to access ("patients")
 print("Connected to db: {} with collections = {}".format(db, db.collection_names()))  # *** success
