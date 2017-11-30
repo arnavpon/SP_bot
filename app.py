@@ -22,7 +22,7 @@ class MainHandler(web.RequestHandler):
                 self.write("{}:<br>".format(name.upper()))
                 for r in db[name].find():  # display active conversations
                     self.write("   {}<br>".format(r))
-                result = db.conversations.delete_many()  # delete conversation
+                result = db.conversations.delete_many({})  # delete all conversations
                 self.write("Deleted {} conversations...".format(result.deleted_count))
         client.close()
 
