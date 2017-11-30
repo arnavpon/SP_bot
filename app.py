@@ -18,10 +18,10 @@ class MainHandler(web.RequestHandler):
         db = client.patients  # specify the DATABASE to access (patients)
         collections = db.collection_names()
         for name in collections:
-            if name == "conversations":
-                self.write("Conversations:<br>".format(name))
+            if name == "conversations" or name == "relationships":
+                self.write("{}:<br>".format(name.upper()))
                 for r in db[name].find():  # display active conversations
-                    print("   ", r)
+                    self.write("   {}<br>".format(r))
         client.close()
 
     def post(self, *args, **kwargs):  # incoming POST request
