@@ -18,10 +18,12 @@ class MainHandler(web.RequestHandler):
         db = client.patients  # specify the DATABASE to access (patients)
         collections = db.collection_names()
         for name in collections:
-            if name == "conversations" or name == "relationships":
+            if name == "conversations":
                 self.write("{}:<br>".format(name.upper()))
                 for r in db[name].find():  # display active conversations
                     self.write("   {}<br>".format(r))
+                result = db.conversations.delete_many()  # delete conversation
+                self.write("Deleted {} conversations...".format(result.deleted_count))
         client.close()
 
     def post(self, *args, **kwargs):  # incoming POST request
