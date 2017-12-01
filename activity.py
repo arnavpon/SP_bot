@@ -64,7 +64,7 @@ class Activity():
                         print("Converted json -> {} of type {}".format(received_value, type(received_value)))
                     if ("intro_1" in received_value) and (position == 1):  # 1st intro option
                         received_value = received_value["intro_1"]  # get the dict inside
-                        if "option" in received_value:  # user selected the RANDOM CASE option
+                        if "option" in received_value:  # user selected RANDOM CASE option
                             pts = Patient.getAllPatients()
                             rand_pt = randint(0, (pts.count() - 1))  # generate random # from 0 to (# of patients - 1)
                             self.__patient = Patient(pts[rand_pt]['_id'])  # randomly select one of our SPs & initialize
