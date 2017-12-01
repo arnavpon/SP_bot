@@ -54,8 +54,8 @@ class Authentication:
             # emulator_iss = "https://sts.windows.net/d6d49420-f39b-4df7-a1dc-d59a935871db/"  # *** EMULATOR v3.1
             token = jwt.decode(token, secret,
                                algorithms=self.__signing_algorithm,
-                               audience=self.__microsoft_app_id,
-                               issuer=connector_iss)  # (6) decodes token & VERIFIES JWT signature/audience/issuer
+                               audience=self.__microsoft_app_id)  # (6) decodes token & VERIFIES JWT signature/audience/issuer
+            # issuer=connector_iss
             pprint(token)
         except jwt.InvalidIssuerError:  # (3) validate that the ISSUER is valid (handled by jwt automatically)
             print("Error - the JWT ISSUER is invalid!")
@@ -69,7 +69,7 @@ class Authentication:
         except Exception as e:  # uncaught exception
             print("[{}] Error decoding JWT - '{}'".format(type(e).__name__, e.args))
             return 403
-        else:  # (7) check the service URL (must match the Activity serviceUrl)
+        else:  # (7) check the token's service URL (must match the Activity serviceUrl)
             token_url = token.get("serviceUrl", None) # *** CONNECTOR only
             if token_url != service_url:
                 print("Error - Activity serviceURL [{}] does NOT match tokenURL [{}]".format(service_url, token_url))
