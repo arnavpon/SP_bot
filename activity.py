@@ -46,10 +46,11 @@ class Activity():
             UPDATED_POSITION = position + 1  # update the position to prevent out-of-flow actions
         else:  # get the activity type, use it to handle what methods are performed
             self.activityType = post_body['type']
-            if (self.activityType == "message"):  # POST a response to the message to the designated URL
+            if self.activityType == "message":  # POST a response to the message to the designated URL
                 if self.__postBody.get('text', None) and (self.__patient is not None):  # user sent TEXT message
                     received_text = self.__postBody.get('text')
-                    if received_text.strip() == "END ENCOUNTER":  # close the encounter
+                    print("Received TEXT message: '{}' of type {}".format(received_text, type(received_text)))
+                    if received_text.strip().upper() == "END ENCOUNTER":  # close the encounter
                         feedback_handler = FeedbackModule(self, 0)  # init Feedback Module object to handle next step
                         UPDATED_POSITION = feedback_handler.getPosition()  # NEGATIVE position => encounter was CLOSED
                     else:  # question for the bot
@@ -57,9 +58,10 @@ class Activity():
 
                 elif self.__postBody.get("value", None) is not None:  # user selected a card (from initial sequence)
                     received_value = self.__postBody.get('value')  # obtain the option number that was sel
+                    print("Received VALUE: '{}' of type {}".format(received_value, type(received_value)))
                     if ("intro_1" in received_value) and (position == 1):  # 1st intro option
                         received_value = received_value["intro_1"]  # get the dict inside
-                        if ("option" in received_value):  # user selected the RANDOM CASE option
+                        if "option" in received_value:  # user selected the RANDOM CASE option
                             pts = Patient.getAllPatients()
                             rand_pt = randint(0, (pts.count() - 1))  # generate random # from 0 to (# of patients - 1)
                             self.__patient = Patient(pts[rand_pt]['_id'])  # randomly select one of our SPs & initialize
