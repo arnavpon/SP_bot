@@ -41,7 +41,7 @@ class Authentication:
 
         token = auth_header[7:]  # strip the "Bearer" & access the token
         try:  # parse the JWT (using the JWK as the secret) to obtain the contained JSON data
-            key_index = 1 if len(self.__jwk) > 1 else -1  # index of one of the keys in self.__jwk
+            key_index = 0 if len(self.__jwk) > 0 else -1  # index of one of the keys in self.__jwk
             secret = RSAAlgorithm.from_jwk(json.dumps(self.__jwk[key_index]))  # create secret by picking JWK from list
             connector_iss = "https://api.botframework.com"  # *** CONNECTOR only - use when we go live
             emulator_iss = self.__jwk[key_index]['issuer']  # *** EMULATOR only - get issuer
@@ -76,11 +76,9 @@ class Authentication:
         emulator_url = "https://login.microsoftonline.com/botframework.com/v2.0/.well-known/openid-configuration"
         request_1 = requests.get(emulator_url)  # (1) get openID document
         request_body = request_1.json()
-        print("BODY: \n")  # ***
-        pprint(request_body)  # ***
         self.__signing_algorithm = request_body['id_token_signing_alg_values_supported']
         jwk_uri = request_body['jwks_uri']  # (2) access URI that specifies location of Bot service's signing keys
-        print("Signing keys @ URI: {}".format(jwk_uri))
+        print("Obtaining signing keys from URI: <{}>".format(jwk_uri))
 
         request_2 = requests.get(jwk_uri)  # send request -> JWK URI
         self.__jwk = request_2.json()['keys']  # (3) obtain signing KEYS from response & cache for 5 days
@@ -88,7 +86,7 @@ class Authentication:
         for key in self.__jwk:  # each key is a DICT containing the following
             pprint(key)
             print()
-        print("Secret keys expire on [{}]".format(self.__secret_expiration))
+        print("Secret keys expire 5d from now on [{}]".format(self.__secret_expiration))
 
     def authenticateOutgoingMessage(self):  # authenticate the OUTGOING message to the user client
         print("\nAuthenticating OUTGOING message...")
