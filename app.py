@@ -36,7 +36,10 @@ class MainHandler(web.RequestHandler):
 
         # (2) Authenticate incoming message & generate a response header:
         auth_header = self.request.headers.get('Authorization', None)
-        status = authenticator.authenticateIncomingMessage(auth_header, post_body.get("serviceUrl", None))  # auth
+        service_url = post_body.get("serviceUrl", None)
+        channel_id = post_body.get("channelId", None)
+        print("ServiceURL = {} | ChannelID = {}".format(service_url, channel_id))  # ***
+        status = authenticator.authenticateIncomingMessage(auth_header, service_url, channel_id)  # authenticate req
         response_header = {"Content-type": "application/json"}
         for header, value in response_header.items():  # iterate through & set response headers
             print("Head = {}. Value = {}.".format(header, value))
