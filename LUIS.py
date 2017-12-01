@@ -149,10 +149,7 @@ class LUIS:
         #      - 1) Modify bot to comply w/ FB guidelines
         #      - 3) Submit fully compliant bot -> FB for publishing
         #      After connecting, update 'Authentication.py' to include ENDORSEMENTS for channel???
-        #      Swap emulator-specific auth code for connector-specific code (search ***)
-        # - 3) Add hosting ENDPOINT on the My Bots page - requires HTTPS
-        #      - go to sp-bot > python server > click on 'Routing'
-        #      - click box to 'Secure Route' under TLS, need certificates & keys
+        #      Swap emulator-specific auth code for connector-specific code (search ***), re-read Documentation
         # - 4) Launch & market!  BEFORE launch, modify the responses we send to user (remove Intent at beginning)
         #      - add an ERROR-reporting system (type in err: "description of error") <- recognize before pass -> LUIS
         #      - log all queries, intents, & responses rendered to server so we can parse & improve

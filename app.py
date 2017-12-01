@@ -22,8 +22,8 @@ class MainHandler(web.RequestHandler):
                 self.write("{}:<br>".format(name.upper()))
                 for r in db[name].find():  # display active conversations
                     self.write("   {}<br>".format(r))
-                result = db.conversations.delete_many({})  # delete all conversations
-                self.write("Deleted {} conversations...".format(result.deleted_count))
+                # result = db.conversations.delete_many({})  # delete all conversations - **will remove FEEDBACK too!**
+                # self.write("Deleted {} conversations...".format(result.deleted_count))
         client.close()
 
     def post(self, *args, **kwargs):  # incoming POST request

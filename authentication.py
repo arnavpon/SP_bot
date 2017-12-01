@@ -73,11 +73,14 @@ class Authentication:
 
     def getSecretKeys(self):  # obtains secret keys from Microsoft's authentication server
         print("Obtaining new JWK from authentication server...")
-        request_1 = requests.get("https://login.microsoftonline.com/"
-                                 "botframework.com/v2.0/.well-known/openid-configuration")  # (1) get openID document
+        emulator_url = "https://login.microsoftonline.com/botframework.com/v2.0/.well-known/openid-configuration"
+        request_1 = requests.get(emulator_url)  # (1) get openID document
         request_body = request_1.json()
+        print("BODY: \n")  # ***
+        pprint(request_body)  # ***
         self.__signing_algorithm = request_body['id_token_signing_alg_values_supported']
         jwk_uri = request_body['jwks_uri']  # (2) access URI that specifies location of Bot service's signing keys
+        print("Signing keys @ URI: {}".format(jwk_uri))
 
         request_2 = requests.get(jwk_uri)  # send request -> JWK URI
         self.__jwk = request_2.json()['keys']  # (3) obtain signing KEYS from response & cache for 5 days
