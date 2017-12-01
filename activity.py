@@ -173,6 +173,16 @@ class Activity():
             },
             "replyToId": self.__postBody['id']
         }
+        messageData = {
+            "type": "message",
+            "locale": self.__postBody.get('locale', 'en-US'),
+            "from": self.__postBody['recipient'],
+            "conversation": self.__postBody['conversation'],
+            "recipient": self.__postBody['from'],
+            "replyToId": self.__postBody['id']
+        }
+        print("\nMsg Data: ")
+        print(messageData)
         return messageData
 
     def addTextToMessage(self, messageShell, text):  # adds a text message to the message shell
