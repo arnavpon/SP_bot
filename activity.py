@@ -59,6 +59,9 @@ class Activity():
                 elif self.__postBody.get("value", None) is not None:  # user selected a card (from initial sequence)
                     received_value = self.__postBody.get('value')  # obtain the option number that was sel
                     print("Received VALUE: '{}' of type {}".format(received_value, type(received_value)))
+                    if type(received_value) is str:  # FB messenger passes data as JSON (not a dict!)
+                        received_value = json.loads(received_value)  # convert JSON -> dict
+                        print("Converted json -> {} of type {}".format(received_value, type(received_value)))
                     if ("intro_1" in received_value) and (position == 1):  # 1st intro option
                         received_value = received_value["intro_1"]  # get the dict inside
                         if "option" in received_value:  # user selected the RANDOM CASE option
