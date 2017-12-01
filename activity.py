@@ -18,6 +18,7 @@ class Activity():
         pprint(post_body)  # output JSON from bot client
         self.__authenticator = authenticator  # store the <Authentication> object
         self.__postBody = post_body  # store the POST data
+        pprint(post_body)  # ***
         self.__conversationID = post_body['conversation']['id']  # get conversation ID (needed to construct URL)
         self.__patient = patient  # initialize <Patient> object w/ passed-in argument
         global UPDATED_POSITION  # indicator that is referenced by the server to keep track of current flow position
