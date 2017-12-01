@@ -44,7 +44,7 @@ class Authentication:
             key_index = 0 if len(self.__jwk) > 0 else -1  # index of one of the keys in self.__jwk
             secret = RSAAlgorithm.from_jwk(json.dumps(self.__jwk[key_index]))  # create secret by picking JWK from list
             connector_iss = "https://api.botframework.com"  # *** CONNECTOR only - use when we go live
-            emulator_iss = self.__jwk[key_index]['issuer']  # *** EMULATOR only - get issuer
+            emulator_iss = self.__jwk[key_index]['issuer']  # *** EMULATOR only - get issuer | shouldn't work but does
             # emulator_iss = "https://sts.windows.net/f8cdef31-a31e-4b4a-93e4-5f571e91255a/"  # emulator v3.2
             # emulator_iss = "https://sts.windows.net/d6d49420-f39b-4df7-a1dc-d59a935871db/"  # *** EMULATOR v3.1
             token = jwt.decode(token, secret,
