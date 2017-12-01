@@ -86,7 +86,7 @@ class Authentication:
         print("Obtaining new JWK from authentication server...")
         emulator_url = "https://login.microsoftonline.com/botframework.com/v2.0/.well-known/openid-configuration"
         connector_url = "https://login.botframework.com/v1/.well-known/openidconfiguration"
-        request_1 = requests.get(emulator_url)  # (1) get openID document
+        request_1 = requests.get(connector_url)  # (1) get openID document
         request_body = request_1.json()
         self.__signing_algorithm = request_body['id_token_signing_alg_values_supported']
         jwk_uri = request_body['jwks_uri']  # (2) access URI that specifies location of Bot service's signing keys
