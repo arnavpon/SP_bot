@@ -18,7 +18,6 @@ class Activity():
         pprint(post_body)  # output JSON from bot client
         self.__authenticator = authenticator  # store the <Authentication> object
         self.__postBody = post_body  # store the POST data
-        pprint(post_body)  # ***
         self.__conversationID = post_body['conversation']['id']  # get conversation ID (needed to construct URL)
         self.__patient = patient  # initialize <Patient> object w/ passed-in argument
         global UPDATED_POSITION  # indicator that is referenced by the server to keep track of current flow position
@@ -128,10 +127,10 @@ class Activity():
         action = {
             'title': title
         }
-        if (type == 0):  # default action type is SUBMIT
+        if type == 0:  # default action type is SUBMIT
             action.update(type="Action.Submit")
             action.update(data={kwargs.get('option_key'): kwargs.get('option_value')})  # add data field for selection
-        elif (type == 1):  # 1 -> SHOW card
+        elif type == 1:  # 1 -> SHOW card
             action.update(type="Action.ShowCard")
             card = {
                 "type": "AdaptiveCard",
@@ -165,7 +164,6 @@ class Activity():
             "recipient": self.__postBody['from'],
             "replyToId": self.__postBody['id']
         }
-        print("\nMsg Data: ")  # ***
         print(messageData)
         return messageData
 
