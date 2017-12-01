@@ -50,7 +50,7 @@ class Authentication:
             token = jwt.decode(token, secret,
                                algorithms=self.__signing_algorithm,
                                audience=self.__microsoft_app_id,
-                               issuer=emulator_iss)  # (6) decodes the token & VERIFIES the JWT signature
+                               issuer=connector_iss)  # (6) decodes the token & VERIFIES the JWT signature
         except jwt.InvalidIssuerError:  # (3) validate that the ISSUER is valid (handled by jwt automatically)
             print("Error - the JWT ISSUER is invalid!")
             return 403
@@ -64,18 +64,20 @@ class Authentication:
             print("[{}] Error decoding JWT - '{}'".format(type(e).__name__, e.args))
             return 403
         else:  # (7) check the service URL (must match the Activity serviceUrl)
-            # token_url = token.get("serviceUrl", None) # *** CONNECTOR only
-            # if token_url != service_url: return 403  # *** CONNECTOR only
-            app_id = token.get("appid", None)  # *** EMULATOR only - after update, appid is no longer in token!
-            app_id = token.get("azp", None)  # after update access the 'azp' property
-            if app_id != self.__microsoft_app_id: return 403  # *** EMULATOR only
+            token_url = token.get("serviceUrl", None) # *** CONNECTOR only
+            if token_url != service_url: return 403  # *** CONNECTOR only
+            #app_id = token.get("appid", None)  # *** EMULATOR only - after update, 'appid' key is no longer in token!
+            #app_id = token.get("azp", None)  # EMULATOR only - AFTER update, access the 'azp' property
+            #if app_id != self.__microsoft_app_id: return 403  # *** EMULATOR only
         return 200  # if all checks are passed, return 200 OK status
 
     def getSecretKeys(self):  # obtains secret keys from Microsoft's authentication server
         print("Obtaining new JWK from authentication server...")
         emulator_url = "https://login.microsoftonline.com/botframework.com/v2.0/.well-known/openid-configuration"
-        request_1 = requests.get(emulator_url)  # (1) get openID document
+        connector_url = "https://login.botframework.com/v1/.well-known/openidconfiguration"
+        request_1 = requests.get(connector_url)  # (1) get openID document
         request_body = request_1.json()
+        pprint(request_body)  # ***
         self.__signing_algorithm = request_body['id_token_signing_alg_values_supported']
         jwk_uri = request_body['jwks_uri']  # (2) access URI that specifies location of Bot service's signing keys
         print("Obtaining signing keys from URI: <{}>".format(jwk_uri))
