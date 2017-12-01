@@ -160,28 +160,12 @@ class Activity():
         messageData = {
             "type": "message",
             "locale": self.__postBody.get('locale', 'en-US'),
-            "from": {
-                "id": self.__postBody['recipient']['id'],
-                "name": self.__postBody['recipient']['name']
-            },
-            "conversation": {
-                "id": self.__postBody['conversation']['id'],
-            },
-            "recipient": {
-                "id": self.__postBody['from']['id'],
-                "name": self.__postBody['from']['name']
-            },
-            "replyToId": self.__postBody['id']
-        }
-        messageData = {
-            "type": "message",
-            "locale": self.__postBody.get('locale', 'en-US'),
             "from": self.__postBody['recipient'],
             "conversation": self.__postBody['conversation'],
             "recipient": self.__postBody['from'],
             "replyToId": self.__postBody['id']
         }
-        print("\nMsg Data: ")
+        print("\nMsg Data: ")  # ***
         print(messageData)
         return messageData
 
