@@ -246,15 +246,14 @@ class Activity():
                     card_title += block['text'] + "\n\n"
 
                 buttons = list()  # initialize list of action buttons
-                for action in actions:  # construct Facebook Messenger button for each action in list
-                    if action['type'] == "Action.ShowCard":  # dropdown card
-                        for b in action['card']['actions']:  # display EACH dropdown button ***
-                            button = {
+                for action in actions:  # construct Facebook Messenger button for each action - *LIMIT 3 BUTTONS!*
+                    if action['type'] == "Action.ShowCard":  # dropdown card - create button for title
+                        button = {
                                 "type": "postback",
-                                "title": b['title'],
-                                "payload": b['data']
-                            }
-                            buttons.append(button)  # add to list
+                                "title": action['card']['body'],
+                                "payload": action['card']['body']
+                        }
+                        buttons.append(button)  # add to list
                     else:  # default card type
                         button = {
                             "type": "postback",
