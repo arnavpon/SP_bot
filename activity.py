@@ -266,23 +266,12 @@ class Activity():
                         additional_messages.append({"text": action['title']})  # put title in send queue
                         show_title = action['card']['body']  # get list of body items
                         show_actions = action['card']['actions']  # list of dropdown actions
-
-                        btns = list()  # initialize
-                        for i, show_action in enumerate(show_actions):  # get each action button
-                            print("Show Action!")
-                            button = {
-                                "type": "postback",
-                                "title": show_action['title'],
-                                "payload": json.dumps(show_action['data'])
-                            }
-                            btns.append(button)
-
-                            # Every 3 buttons (limit), create new button template card:
+                        for i, _ in enumerate(show_actions):  # every 3 buttons (limit), create new template card
                             if i == 2:  # FIRST set of cards for ShowCard - add title
-                                additional_messages.append({"body": show_title, "actions": btns})
+                                additional_messages.append({"body": show_title, "actions": show_actions[:3]})
                             elif (i + 1) % 3 == 0:  # another set of 3 cards
-                                additional_messages.append({"actions": btns})
-                            btns = list()  # clear button list after adding btns to queue
+                                additional_messages.append({"actions": show_actions[(i-2):(i+1)]})
+
                         print(additional_messages)  # ***
 
                     else:  # DEFAULT card type
