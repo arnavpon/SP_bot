@@ -258,20 +258,20 @@ class Activity():
                     print(action)
                     if action['type'] == "Action.ShowCard":  # dropdown card - deliver new set of buttons
                         pass
-                        self.sendTextMessage(text=action['title'])
-                        button = {
-                                "type": "postback",
-                                "title": action['card']['body'][0]['text'],
-                                "payload": action['card']['body'][0]['text']
-                        }
-                        buttons.append(button)  # add to list
+                        # self.sendTextMessage(text=action['title'])  # sending TXT will NOT be formatted properly!***
+                        # button = {
+                        #         "type": "postback",
+                        #         "title": action['card']['body'][0]['text'],
+                        #         "payload": action['card']['body'][0]['text']
+                        # }
+                        # buttons.append(button)  # add to list
                     else:  # default card type
                         button = {
                             "type": "postback",
                             "title": action['title'],
-                            "payload": action['data']
+                            "payload": json.dumps(action['data'])
                         }
-                        # payload = action['data'], <Str> payload works!
+                        # only string payload works
                         buttons.append(button)  # add button to list
 
                 attachment = {
