@@ -258,7 +258,7 @@ class Activity():
                     print(action)
                     if action['type'] == "Action.ShowCard":  # dropdown card - deliver new set of buttons
                         break
-                        self.sendTextMessage(text=action['title'])
+                        self.sendTextMessage(text=action['title']) #
                         for b in action[]:
                             pass
                         button = {
