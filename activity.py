@@ -19,8 +19,8 @@ class Activity():
         pprint(post_body)  # output JSON from bot client
         self.__authenticator = authenticator  # store the <Authentication> object
         self.__postBody = post_body  # store the POST data
-        self.__conversationID = post_body['conversation']['id']  # get conversation ID (needed to construct URL)
-        self.__channel = post_body.get("channelId", None)  # channel the user is accessing bot with
+        self.__conversation_id = post_body['conversation']['id']  # get conversation ID (needed to construct URL)
+        self.__channel_id = post_body.get("channelId", None)  # channel the user is accessing bot with
         self.__patient = patient  # initialize <Patient> object w/ passed-in argument
         self.__action_required = False  # indicator that outgoing message will contain an ACTION
         global UPDATED_POSITION  # indicator that is referenced by the server to keep track of current flow position
@@ -137,23 +137,21 @@ class Activity():
         }
         if type == 0:  # default action type is SUBMIT
             action.update(type="Action.Submit")
-            action.update(data={kwargs.get('option_key'): kwargs.get('option_value')})  # add data field for selection
+            action.update(data={kwargs.get('option_key'): kwargs.get('option_value')})  # add data (sent in response)
         elif type == 1:  # 1 -> SHOW card
             action.update(type="Action.ShowCard")
             card = {
                 "type": "AdaptiveCard",
                 "actions": kwargs.get('actions')
             }
-            if (kwargs.get('body', None)):  # check if showCard has a body
+            if kwargs.get('body', None):  # check if ShowCard has a body
                 card.update(body=kwargs.get('body'))  # add body -> card
             action.update(card=card)  # add the showCard to show on click
         return action
 
     # --- MESSAGE CREATION LOGIC ---
     def routeDirectToFacebook(self):  # determines if message should be passed DIRECT to facebook (TRUE)
-        print("Constructing response URL...")
-        print("Is Action Required: {}".format(self.__action_required))  # ***
-        if (self.__channel == "facebook") and self.__action_required:  # update all == channel checks! ***
+        if (self.__channel_id == "facebook") and self.__action_required:
             return True  # pass -> Facebook directly
         return False  # default return value
 
@@ -167,7 +165,7 @@ class Activity():
         else:  # all other channels
             serviceURL = self.__postBody['serviceUrl']  # get base URL to return response to
             activityID = self.__postBody['id']  # get the activityID (needed to construct URL)
-            returnURL = serviceURL + "/v3/conversations/{}/activities/{}".format(self.__conversationID, activityID)
+            returnURL = serviceURL + "/v3/conversations/{}/activities/{}".format(self.__conversation_id, activityID)
             return returnURL
 
     def getResponseHeader(self):  # constructs the response header (submits an Authorization header)
@@ -212,7 +210,7 @@ class Activity():
 
     def addTextToMessage(self, message_shell, text):  # adds a text message to the message shell
         if text is not None:  # ONLY add text to message if it is NOT None
-            if self.__channel == "facebook":  # re-format bold & italic markup for Facebook Messenger
+            if self.__channel_id == "facebook":  # re-format bold & italic markup for Facebook Messenger
                 print("\nReformatting text for FB Messenger: ")
                 text = self.reformatText(text, r'\*\*', '+')  # modify the ** -> a + temporarily
                 text = self.reformatText(text, r'\*', '_')  # modify the * -> a _ (italic in Facebook)
@@ -241,24 +239,51 @@ class Activity():
         # 'buttons': an ARRAY of DICTS (keys = TYPE, TITLE, & VALUE) | see bot_framework documentation
         body = kwargs.get('body', [])  # body elements are already formatted properly by the class method
         actions = kwargs.get('actions', [])  # these actions are already formatted by class method
-        if self.routeDirectToFacebook():
-            temp = dict()
-            for block in body:  # body is a LIST of text blocks
-                temp["text"] = block['text']
-                break  # ***
-            message_shell.update(message=temp)
-            return message_shell
-
         if len(actions) > 0:  # make sure there is at least 1 action before creating attachment
-            attachment = [{
-                "contentType": "application/vnd.microsoft.card.adaptive",
-                "content": {
-                    "type": "AdaptiveCard",
-                    "body": body,
-                    "actions": actions
+            if self.routeDirectToFacebook():  # construct Facebook-specific card
+                card_title = ""
+                for block in body:  # body is a LIST of text blocks - combine into single string
+                    card_title += block['text'] + "\n\n"
+
+                buttons = list()  # initialize list of action buttons
+                for action in actions:  # construct Facebook Messenger button for each action in list
+                    if action['type'] == "Action.ShowCard":  # dropdown card
+                        for b in action['card']['actions']:  # display EACH dropdown button ***
+                            button = {
+                                "type": "postback",
+                                "title": b['title'],
+                                "payload": b['data']
+                            }
+                            buttons.append(button)  # add to list
+                    else:  # default card type
+                        button = {
+                            "type": "postback",
+                            "title": action['title'],
+                            "payload": action['data']
+                        }
+                        buttons.append(button)  # add button to list
+
+                attachment = {
+                    "attachment": {
+                        "type": "template",
+                        "payload": {
+                            "template_type": "button",
+                            "text": card_title,
+                            "buttons": buttons
+                        }
+                    }
                 }
-            }]
-            message_shell.update(attachments=attachment)  # update shell w/ attachments
+                message_shell.update(message=attachment)  # update shell w/ attachments
+            else:
+                attachment = [{
+                    "contentType": "application/vnd.microsoft.card.adaptive",
+                    "content": {
+                        "type": "AdaptiveCard",
+                        "body": body,
+                        "actions": actions
+                    }
+                }]
+                message_shell.update(attachments=attachment)  # update shell w/ attachments
         return message_shell
 
     def createMessage(self, **kwargs):  # function call to create message w/ any text &/or attachments
@@ -267,7 +292,7 @@ class Activity():
         message_shell = self.getMessageShell()  # (3) construct the message outline
         message_shell = self.addTextToMessage(message_shell, kwargs.get('text', None)) # (4A) add any text
         message_shell = self.addAdaptiveCardToMessage(message_shell, body=kwargs.get('body', []),
-                                                  actions=kwargs.get('actions', []))  # (4B) add adaptive card
+                                                      actions=kwargs.get('actions', []))  # (4B) add adaptive card
         message_shell = self.addHeroCardToMessage(message_shell, buttons=kwargs.get('buttons', []),
                                                   title=kwargs.get('card_title', []),
                                                   subtitle=kwargs.get('card_subtitle', []),
@@ -277,7 +302,7 @@ class Activity():
         req = requests.post(return_url, data=json.dumps(message_shell), headers=head)  # send response
         print("Sent response to URL: [{}] with code {}".format(return_url, req.status_code))
         if self.__patient:  # check if patient exists
-            self.__patient.removeBlock(self.__conversationID)  # remove block AFTER sending msg to prep for next query
+            self.__patient.removeBlock(self.__conversation_id)  # remove block AFTER sending msg to prep for next query
         if req.status_code != 200:  # check for errors on delivery
             print("[Delivery Error] Msg: {}".format(req.json()))
         else:  # successful delivery
@@ -285,7 +310,7 @@ class Activity():
 
     # --- ACCESSOR METHODS ---
     def getConversationID(self):
-        return self.__conversationID
+        return self.__conversation_id
 
     def getPatient(self):  # accessor method for patient
         return self.__patient
