@@ -264,9 +264,7 @@ class Activity():
                     if action['type'] == "Action.ShowCard":  # dropdown card - cache options in send queue
                         print("Show Card")
                         additional_messages.append({"text": action['title']})  # put title in send queue
-                        show_title = ""
-                        for body_item in action['card']['body']:  # combine all body items into 1 string
-                            show_title += body_item['text'] + "\n\n"  # separate strings w/ newline character
+                        show_title = action['card']['body']  # get list of body items
                         show_actions = action['card']['actions']  # list of dropdown actions
 
                         btns = list()  # initialize
@@ -330,8 +328,8 @@ class Activity():
                 self.sendTextMessage(msg['text'])
             else:  # CARD message
                 print('card msg')
-                body = msg['body'] if 'body' in msg else list()
-                self.sendAdaptiveCardMessage(actions=msg['actions'], body=body)
+                title = msg['body'] if 'body' in msg else list()
+                self.sendAdaptiveCardMessage(actions=msg['actions'], body=title)
 
     def deliverMessage(self, return_url, head, message_shell):  # delivers message to URL
         req = requests.post(return_url, data=json.dumps(message_shell), headers=head)  # send response
