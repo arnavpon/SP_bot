@@ -16,17 +16,17 @@ class FeedbackModule:
         if self.__position == 0:  # INITIAL interaction
             print("\n\nScore = {}".format(self.__patient.scoreInterview())) # ***
             self.__position = -1  # set NEGATIVE position to indicate user is in feedback flow
-            self.__activity.createMessage(text="*Patient encounter is now **closed**.*")  # send msg
-            self.__activity.createMessage(text="What is your **top** differential diagnosis for my presentation?") # DD
+            self.__activity.sendTextMessage(text="*Patient encounter is now **closed**.*")  # send msg
+            self.__activity.sendTextMessage(text="What is your **top** differential diagnosis for my presentation?")
         elif self.__position == -1:  # (1) top differential diagnosis incoming
             if response is not None:
                 self.__patient.differentials[0] = (self.__patient.differentials[0][0], response.strip())  # store DD1
-                self.__activity.createMessage(text="What is your **second** most likely differential diagnosis?")
+                self.__activity.sendTextMessage(text="What is your **second** most likely differential diagnosis?")
                 self.__position = -2
         elif self.__position == -2:  # (2) 2nd differential diagnosis incoming
             if response is not None:
                 self.__patient.differentials[1] = (self.__patient.differentials[1][0], response.strip())  # store DD2
-                self.__activity.createMessage(text="What is your **third** most likely differential diagnosis?")
+                self.__activity.sendTextMessage(text="What is your **third** most likely differential diagnosis?")
                 self.__position = -3
         elif self.__position == -3:  # (3) 3rd differential diagnosis incoming - provide feedback based on inputs
             if response is not None:
@@ -50,7 +50,7 @@ class FeedbackModule:
                         dropdown_body.append(self.__activity.createTextBlock(block))
                 dropdown_btn = [self.__activity.createAction("Got It!", option_key="0", option_value=None)]
                 actions = [self.__activity.createAction("OK", type=1, body=dropdown_body, actions=dropdown_btn)]
-                self.__activity.createMessage(body=body, actions=actions)  # present feedback -> user via card
+                self.__activity.sendAdaptiveCardMessage(body=body, actions=actions)  # present feedback -> user via card
                 self.__position = -4
         elif self.__position == -4:  # user acknowledged Differential Diagnosis score - provide Interview Score
             received_value = self.__post_body.get('value', dict())  # make sure correct option was selected
@@ -72,15 +72,15 @@ class FeedbackModule:
                 actions = [
                     self.__activity.createAction("Sounds Good", option_key="1", option_value=None),
                 ]
-                self.__activity.createMessage(body=body, actions=actions)  # present feedback -> user via card
+                self.__activity.sendAdaptiveCardMessage(body=body, actions=actions)  # present feedback via card
                 self.__position = -5
         elif self.__position == -5:  # user acknowledged the Interview score - ask for feedback before close
             received_value = self.__post_body.get('value', dict())  # make sure correct option was selected
             if "1" in received_value:  # make sure selection comes from correct button
-                self.__activity.createMessage(text="Great Job! Before you go, I'd really appreciate it if you "
-                                                   "would give me some feedback on your experience today.")
-                self.__activity.createMessage(text="Just type in your thoughts below (as many as you want), "
-                                                   "and then close the client when you're finished. Thanks!")
+                self.__activity.createTextMessage(text="Great Job! Before you go, I'd really appreciate it if you "
+                                                       "would give me some feedback on your experience today.")
+                self.__activity.createTextMessage(text="Just type in your thoughts below (as many as you want), "
+                                                       "and then close the client when you're finished. Thanks!")
                 self.__position = -6
         else:  # user provided feedback
             if response:

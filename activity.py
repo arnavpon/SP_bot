@@ -45,7 +45,7 @@ class Activity():
                                       body=[self.createTextBlock("Choose a specialty:")],
                                       actions=show_actions)
             ]
-            self.createMessage(body=body, actions=actions)
+            self.sendAdaptiveCardMessage(body=body, actions=actions)
             UPDATED_POSITION = position + 1  # update the position to prevent out-of-flow actions
         else:  # get the activity type, use it to handle what methods are performed
             self.activityType = post_body['type']
@@ -81,12 +81,12 @@ class Activity():
                             ]
                             actions = [
                                 self.createAction("Choose random {} case".format(cat), option_key="intro_2",
-                                                      option_value={"option": 0, "category": cat}),
+                                                  option_value={"option": 0, "category": cat}),
                                 self.createAction("Select specific case by chief complaint", type=1,
-                                                      body=[self.createTextBlock("Choose a chief complaint:")],
-                                                      actions=show_actions)
+                                                  body=[self.createTextBlock("Choose a chief complaint:")],
+                                                  actions=show_actions)
                             ]
-                            self.createMessage(body=body, actions=actions)  # present 2 new options to user via card
+                            self.sendAdaptiveCardMessage(body=body, actions=actions)  # present 2 new options via card
                         UPDATED_POSITION = 2  # move to next position in flow
                     elif ("intro_2" in received_value) and (position == 2):  # user selected an option from card #2
                         received_value = received_value["intro_2"]  # obtain the nested dict
@@ -102,17 +102,17 @@ class Activity():
                         UPDATED_POSITION = 3  # move to next position in flow
 
     def renderIntroductoryMessage(self):  # send message that introduces patient & BEGINS the encounter
-        self.createMessage(text="Your patient is {}, a **{}** {}-old **{}** "
-                                "complaining of **{}**".format(self.__patient.name,
-                                                            self.__patient.age[0],
-                                                            self.__patient.age[1],
-                                                            self.__patient.gender,
-                                                            self.__patient.chief_complaint))
-        self.createMessage(text="*You can now begin taking the history.*  "
-                                "Type **END ENCOUNTER** when you're ready to end the interview & get your score.")
+        self.sendTextMessage(text="Your patient is {}, a **{}** {}-old **{}** "
+                                  "complaining of **{}**".format(self.__patient.name,
+                                                                 self.__patient.age[0],
+                                                                 self.__patient.age[1],
+                                                                 self.__patient.gender,
+                                                                 self.__patient.chief_complaint))
+        self.sendTextMessage(text="*You can now begin taking the history.* "
+                                  "Type **END ENCOUNTER** when you're ready to end the interview & get your score.")
 
     # --- ADAPTIVE CARD ELEMENTS ---
-    def createButton(cls, type=0, title="", value=""):  # creates a BUTTON for hero card attachment
+    def createButton(cls, type=0, title="", value=""):  # creates a BUTTON for HERO card attachment
         # Parse the type (an integer value representing a type of button)
         if type == 0: type = "showImage"
         else: type = "openUrl"
@@ -208,7 +208,10 @@ class Activity():
         print("[reformat] AFTER = [{}]".format(text))
         return text
 
-    def addTextToMessage(self, message_shell, text):  # adds a text message to the message shell
+    def sendTextMessage(self, text):  # sends text message
+        return_url = self.getResponseURL()  # (1) get return URL
+        head = self.getResponseHeader()  # (2) get OUT-going auth token for the header
+        message_shell = self.getMessageShell()  # (3) construct the message outline
         if text is not None:  # ONLY add text to message if it is NOT None
             if self.__channel_id == "facebook":  # re-format bold & italic markup for Facebook Messenger
                 print("\nReformatting text for FB Messenger: ")
@@ -218,27 +221,32 @@ class Activity():
                 message_shell.update(text=text)
             else:
                 message_shell.update(text=text)  # update shell w/ text
-        return message_shell
+        pprint(message_shell)
+        self.deliverMessage(return_url, head, message_shell)
 
-    def addHeroCardToMessage(self, messageShell, **kwargs):  # adds BUTTONS to the message being constructed
+    def sendHeroCardMessage(self, title=None, subtitle=None, text=None, buttons=list()):  # sends HeroCard message
         # 'buttons': an ARRAY of DICTS (keys = TYPE, TITLE, & VALUE) | see bot_framework documentation
-        buttons = kwargs.get('buttons', [])  # these buttons are already formatted properly by the class method
+        return_url = self.getResponseURL()  # (1) get return URL
+        head = self.getResponseHeader()  # (2) get OUT-going auth token for the header
+        message_shell = self.getMessageShell()  # (3) construct the message outline
         if len(buttons) > 0:  # make sure there is at least 1 button before creating an attachment
             content = {"buttons": buttons}
-            if kwargs.get('title', None): content.update(title=kwargs.get('title'))
-            if kwargs.get('subtitle', None): content.update(subtitle=kwargs.get('subtitle'))
-            if kwargs.get('text', None): content.update(text=kwargs.get('text'))
+            if title is not None: content.update(title=title)
+            if subtitle is not None: content.update(subtitle=subtitle)
+            if text is not None: content.update(text=text)
             attachment = [{
                 "contentType": "application/vnd.microsoft.card.hero",
                 "content": content
             }]
-            messageShell.update(attachments=attachment)  # update shell w/ attachments
-        return messageShell
+            message_shell.update(attachments=attachment)  # update shell w/ attachments
+        pprint(message_shell)
+        self.deliverMessage(return_url, head, message_shell)
 
-    def addAdaptiveCardToMessage(self, message_shell, **kwargs):  # adds ACTIONS to the message being constructed
+    def sendAdaptiveCardMessage(self, body, actions):  # sends an AdaptiveCard message w/ body (title) & actions
         # 'buttons': an ARRAY of DICTS (keys = TYPE, TITLE, & VALUE) | see bot_framework documentation
-        body = kwargs.get('body', [])  # body elements are already formatted properly by the class method
-        actions = kwargs.get('actions', [])  # these actions are already formatted by class method
+        return_url = self.getResponseURL()  # (1) get return URL
+        head = self.getResponseHeader()  # (2) get OUT-going auth token for the header
+        message_shell = self.getMessageShell()  # (3) construct the message outline
         if len(actions) > 0:  # make sure there is at least 1 action before creating attachment
             if self.routeDirectToFacebook():  # construct Facebook-specific card
                 card_title = ""
@@ -247,11 +255,13 @@ class Activity():
 
                 buttons = list()  # initialize list of action buttons
                 for action in actions:  # construct Facebook Messenger button for each action - *LIMIT 3 BUTTONS!*
+                    print(action)
                     if action['type'] == "Action.ShowCard":  # dropdown card - create button for title
+                        print("show card")
                         button = {
                                 "type": "postback",
-                                "title": action['card']['body'][0]['title'],
-                                "payload": action['card']['body'][0]['title']
+                                "title": action['card']['body'][0]['text'],
+                                "payload": action['card']['body'][0]['text']
                         }
                         buttons.append(button)  # add to list
                     else:  # default card type
@@ -273,7 +283,7 @@ class Activity():
                     }
                 }
                 message_shell.update(message=attachment)  # update shell w/ attachments
-            else:
+            else:  # BotFramework message
                 attachment = [{
                     "contentType": "application/vnd.microsoft.card.adaptive",
                     "content": {
@@ -283,21 +293,23 @@ class Activity():
                     }
                 }]
                 message_shell.update(attachments=attachment)  # update shell w/ attachments
-        return message_shell
-
-    def createMessage(self, **kwargs):  # function call to create message w/ any text &/or attachments
-        return_url = self.getResponseURL()  # (1) get return URL
-        head = self.getResponseHeader()  # (2) get OUT-going auth token for the header
-        message_shell = self.getMessageShell()  # (3) construct the message outline
-        message_shell = self.addTextToMessage(message_shell, kwargs.get('text', None)) # (4A) add any text
-        message_shell = self.addAdaptiveCardToMessage(message_shell, body=kwargs.get('body', []),
-                                                      actions=kwargs.get('actions', []))  # (4B) add adaptive card
-        message_shell = self.addHeroCardToMessage(message_shell, buttons=kwargs.get('buttons', []),
-                                                  title=kwargs.get('card_title', []),
-                                                  subtitle=kwargs.get('card_subtitle', []),
-                                                  text=kwargs.get('card_text', []))  # (4C) add hero card
         pprint(message_shell)
+        self.deliverMessage(return_url, head, message_shell)
 
+    # def createMessage(self, **kwargs):  # function call to create message w/ any text &/or attachments
+    #     return_url = self.getResponseURL()  # (1) get return URL
+    #     head = self.getResponseHeader()  # (2) get OUT-going auth token for the header
+    #     message_shell = self.getMessageShell()  # (3) construct the message outline
+    #     message_shell = self.addTextToMessage(message_shell, kwargs.get('text', None)) # (4A) add any text
+    #     message_shell = self.addAdaptiveCardToMessage(message_shell, body=kwargs.get('body', []),
+    #                                                   actions=kwargs.get('actions', []))  # (4B) add adaptive card
+    #     message_shell = self.addHeroCardToMessage(message_shell, buttons=kwargs.get('buttons', []),
+    #                                               title=kwargs.get('card_title', []),
+    #                                               subtitle=kwargs.get('card_subtitle', []),
+    #                                               text=kwargs.get('card_text', []))  # (4C) add hero card
+    #     pprint(message_shell)
+
+    def deliverMessage(self, return_url, head, message_shell):  # delivers message to URL
         req = requests.post(return_url, data=json.dumps(message_shell), headers=head)  # send response
         print("Sent response to URL: [{}] with code {}".format(return_url, req.status_code))
         if self.__patient:  # check if patient exists
