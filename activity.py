@@ -257,7 +257,7 @@ class Activity():
                 for action in actions:  # construct Facebook Messenger button for each action - *LIMIT 3 BUTTONS!*
                     print(action)
                     if action['type'] == "Action.ShowCard":  # dropdown card - create button for title
-                        print("show card")
+                        break
                         button = {
                                 "type": "postback",
                                 "title": action['card']['body'][0]['text'],
@@ -268,8 +268,9 @@ class Activity():
                         button = {
                             "type": "postback",
                             "title": action['title'],
-                            "payload": action['data']
+                            "payload": action['title']
                         }
+                        # payload = action['data']
                         buttons.append(button)  # add button to list
 
                 attachment = {
