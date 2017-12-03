@@ -250,8 +250,8 @@ class Activity():
                     if action['type'] == "Action.ShowCard":  # dropdown card - create button for title
                         button = {
                                 "type": "postback",
-                                "title": action['card']['body'],
-                                "payload": action['card']['body']
+                                "title": action['card']['body']['title'],
+                                "payload": action['card']['body']['title']
                         }
                         buttons.append(button)  # add to list
                     else:  # default card type
