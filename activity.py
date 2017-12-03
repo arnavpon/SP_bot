@@ -19,6 +19,7 @@ class Activity():
         self.__authenticator = authenticator  # store the <Authentication> object
         self.__postBody = post_body  # store the POST data
         self.__conversationID = post_body['conversation']['id']  # get conversation ID (needed to construct URL)
+        self.__channel = post_body.get("channelId", None)  # channel the user is accessing bot with
         self.__patient = patient  # initialize <Patient> object w/ passed-in argument
         global UPDATED_POSITION  # indicator that is referenced by the server to keep track of current flow position
 
@@ -26,30 +27,53 @@ class Activity():
             feedback_handler = FeedbackModule(self, position)  # init w/ <Activity> instance & position in flow
             UPDATED_POSITION = feedback_handler.getPosition()  # obtain position from handler
         elif position == 0:  # INITIAL interaction - send introductory options
-            categories = Patient.getAllCategories()  # fetch set of all categories
 
-            # Create a list of sub-actions (for the ShowCard) by category:
-            show_actions = [self.createAction(cat.title(), option_key='intro_1', option_value={"category": cat})
-                            for cat in categories]  # set the selection option -> the category name
+            body = {
+                "messaging_type": "RESPONSE",
+                "recipient":{
+                    "id": post_body['from']['id']
+                },
+                "message": {
+                    "text": "hello, world!"
+                }
+            }
 
-            body = [
-                self.createTextBlock("Welcome to the Interview Bot!", size="large", weight="bolder"),
-                self.createTextBlock("Please select an option to get started:")
-            ]
-            actions = [
-                self.createAction("Choose a random case", option_key="intro_1", option_value={"option": 0}),
-                self.createAction("Select case by specialty", type=1,
-                                      body=[self.createTextBlock("Choose a specialty:")],
-                                      actions=show_actions)
-            ]
-            self.createMessage(body=body, actions=actions)
+            return_url = self.getResponseURL()  # (1) get return URL
+            head = self.getResponseHeader()  # (2) get OUT-going auth token for the header
+            message_shell = body
+            pprint(message_shell)
+
+            req = requests.post(return_url, data=json.dumps(message_shell), headers=head)  # send response
+            print("Sent response to URL: [{}] with code {}".format(return_url, req.status_code))
+            if self.__patient:  # check if patient exists
+                self.__patient.removeBlock(
+                    self.__conversationID)  # remove block AFTER sending msg to prep for next query
+            if req.status_code != 200:  # check for errors on delivery
+                print("[Delivery Error] Msg: {}".format(req.json()))
+
+            # categories = Patient.getAllCategories()  # fetch set of all categories
+            #
+            # # Create a list of sub-actions (for the ShowCard) by category:
+            # show_actions = [self.createAction(cat.title(), option_key='intro_1', option_value={"category": cat})
+            #                 for cat in categories]  # set the selection option -> the category name
+            #
+            # body = [
+            #     self.createTextBlock("Welcome to the Interview Bot!", size="large", weight="bolder"),
+            #     self.createTextBlock("Please select an option to get started:")
+            # ]
+            # actions = [
+            #     self.createAction("Choose a random case", option_key="intro_1", option_value={"option": 0}),
+            #     self.createAction("Select case by specialty", type=1,
+            #                           body=[self.createTextBlock("Choose a specialty:")],
+            #                           actions=show_actions)
+            # ]
+            # self.createMessage(body=body, actions=actions)
             UPDATED_POSITION = position + 1  # update the position to prevent out-of-flow actions
         else:  # get the activity type, use it to handle what methods are performed
             self.activityType = post_body['type']
             if self.activityType == "message":  # POST a response to the message to the designated URL
                 if self.__postBody.get('text', None) and (self.__patient is not None):  # user sent TEXT message
                     received_text = self.__postBody.get('text')
-                    print("Received TEXT message: '{}' of type {}".format(received_text, type(received_text)))
                     if received_text.strip().upper() == "END ENCOUNTER":  # close the encounter
                         feedback_handler = FeedbackModule(self, 0)  # init Feedback Module object to handle next step
                         UPDATED_POSITION = feedback_handler.getPosition()  # NEGATIVE position => encounter was CLOSED
@@ -58,10 +82,9 @@ class Activity():
 
                 elif self.__postBody.get("value", None) is not None:  # user selected a card (from initial sequence)
                     received_value = self.__postBody.get('value')  # obtain the option number that was sel
-                    print("Received VALUE: '{}' of type {}".format(received_value, type(received_value)))
-                    if type(received_value) is str:  # FB messenger passes data as JSON (not a dict!)
+                    if type(received_value) is str:  # FB messenger passes data as JSON (not as a dict!)
                         received_value = json.loads(received_value)  # convert JSON -> dict
-                        print("Converted json -> {} of type {}".format(received_value, type(received_value)))
+
                     if ("intro_1" in received_value) and (position == 1):  # 1st intro option
                         received_value = received_value["intro_1"]  # get the dict inside
                         if "option" in received_value:  # user selected RANDOM CASE option
@@ -182,9 +205,9 @@ class Activity():
         buttons = kwargs.get('buttons', [])  # these buttons are already formatted properly by the class method
         if (len(buttons) > 0):  # make sure there is at least 1 button before creating an attachment
             content = {"buttons": buttons}
-            if (kwargs.get('title', None)): content.update(title=kwargs.get('title'))
-            if (kwargs.get('subtitle', None)): content.update(subtitle=kwargs.get('subtitle'))
-            if (kwargs.get('text', None)): content.update(text=kwargs.get('text'))
+            if kwargs.get('title', None): content.update(title=kwargs.get('title'))
+            if kwargs.get('subtitle', None): content.update(subtitle=kwargs.get('subtitle'))
+            if kwargs.get('text', None): content.update(text=kwargs.get('text'))
             attachment = [{
                 "contentType": "application/vnd.microsoft.card.hero",
                 "content": content
@@ -225,8 +248,8 @@ class Activity():
         print("Sent response to URL: [{}] with code {}".format(return_url, req.status_code))
         if self.__patient:  # check if patient exists
             self.__patient.removeBlock(self.__conversationID)  # remove block AFTER sending msg to prep for next query
-        if (req.status_code != 200):  # check for errors on delivery
-            print("[ErrorMsg] {}".format(req.json()))
+        if req.status_code != 200:  # check for errors on delivery
+            print("[Delivery Error] Msg: {}".format(req.json()))
 
     # ACCESSOR METHODS
     def getConversationID(self):

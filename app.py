@@ -24,6 +24,9 @@ class MainHandler(web.RequestHandler):
                     self.write("   {}<br>".format(r))
                 # result = db.conversations.delete_many({})  # delete all conversations - **will remove FEEDBACK too!**
                 # self.write("Deleted {} conversations...".format(result.deleted_count))
+                global CONVERSATIONS
+                CONVERSATIONS = dict()  # remove cached list of existing conversations (for reset)
+                self.write("[Server] CONVERSATION cache has been cleared...")
         client.close()
 
     def post(self, *args, **kwargs):  # incoming POST request

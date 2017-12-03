@@ -146,10 +146,14 @@ class LUIS:
         # Objectives (V 1.0)
         # - 2) Determine how to CONNECT bot to the Facebook messenger channel (done via My Bots page)
         #      - refer to FB messenger documentation:
-        #      - 1) Modify bot to comply w/ FB guidelines
-        #      - 2) Submit fully compliant bot -> FB for publishing
-        #      - 3) Update formatting: display doesn't translate from BF -> FB messenger
+        #      - 1) Modify bot to comply w/ FB guidelines, need privacyURL (lookup?)
+        #      - 2) Submit fully compliant bot -> FB for publishing (can test as admin/tester/dev w/o publish!)
+        #      - 3) Update formatting BASED ON CHANNEL (create class): display doesn't translate from BF -> FB messenger
+        #           card is completely incorrectly displayed, how to modify??? pass raw JSON through bot framework?
+        #           bold & italics don't display properly
         #      - 4) How do we refresh from inside FB messenger to start new conversation?!?
+        #           deleting convo & restarting picks up from previous point, which we DO NOT want
+        #           no conversation update is provided by either framework
 
         # - 4) Launch & market!  BEFORE launch, modify the responses we send to user (remove Intent at beginning)
         #      - add an ERROR-reporting system (type in err: "description of error") <- recognize before pass -> LUIS
