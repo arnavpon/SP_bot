@@ -254,7 +254,7 @@ class Activity():
         additional_messages = list()  # list of additional messages after first to send
         if len(actions) > 0:  # make sure there is at least 1 action before creating attachment
             if self.routeDirectToFacebook():  # construct Facebook-specific card
-                card_title = ""
+                card_title = "> "  # init as empty string
                 for block in body:  # body is a LIST of text blocks - combine into single string
                     card_title += block['text'] + "\n\n"  # '\n' is handled CORRECTLY by messenger
 
