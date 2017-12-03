@@ -197,14 +197,15 @@ class Activity():
         return message_data
 
     def reformatText(self, text, old_markup, new_markup):  # uses regex to reformat a string
+        print("Reformatting {} with {}".format(old_markup, new_markup))
         print("[reformat] BEFORE = [{}]".format(text))
         indexes = list()  # construct a list of START indexes for matches
         match_len = 0  # size of markup string
-        for match in re.finditer(old_markup, new_markup):  # find all bold markup
+        for match in re.finditer(old_markup, text):  # find all bold markup
             indexes.append(match.span()[0])
             match_len = match.span()[1] - match.span()[0]  # find length of expression
         for i in reversed(indexes):  # REVERSE the index & modify the string from BACK -> FRONT
-            text = text[:i] + "+" + text[(i + match_len):]
+            text = text[:i] + new_markup + text[(i + match_len):]
         print("[reformat] AFTER = [{}]".format(text))
         return text
 
@@ -261,26 +262,30 @@ class Activity():
                 for action in actions:  # construct Facebook Messenger button template for each action - *LIMIT 3!*
                     print(action)
                     if action['type'] == "Action.ShowCard":  # dropdown card - cache options in send queue
+                        print("Show Card")
                         additional_messages.append({"text": action['title']})  # put title in send queue
                         show_title = ""
                         for body_item in action['card']['body']:  # combine all body items into 1 string
                             show_title += body_item['text'] + "\n\n"  # separate strings w/ newline character
                         show_actions = action['card']['actions']  # list of dropdown actions
-                        show_buttons = list()
+
+                        btns = list()  # initialize
                         for i, show_action in enumerate(show_actions):  # get each action button
+                            print("Show Action!")
                             button = {
                                 "type": "postback",
                                 "title": show_action['title'],
                                 "payload": json.dumps(show_action['data'])
                             }
-                            show_buttons.append(button)
+                            btns.append(button)
 
                             # Every 3 buttons (limit), create new button template card:
                             if i == 2:  # FIRST set of cards for ShowCard - add title
-                                additional_messages.append({"body": show_title, "actions": show_buttons})
+                                additional_messages.append({"body": show_title, "actions": btns})
                             elif (i + 1) % 3 == 0:  # another set of 3 cards
-                                additional_messages.append({"actions": show_buttons})
-                            show_buttons = list()  # clear button list
+                                additional_messages.append({"actions": btns})
+                            btns = list()  # clear button list after adding btns to queue
+                        print(additional_messages)  # ***
 
                     else:  # DEFAULT card type
                         button = {
@@ -317,10 +322,14 @@ class Activity():
         pprint(message_shell)
         self.deliverMessage(return_url, head, message_shell)
 
+        print(additional_messages)
         for msg in additional_messages:  # send all additional messages AFTER main message
+            print("Delivering additional message [{}]...".format(msg))
             if "text" in msg:  # TEXT message
+                print("txt msg")
                 self.sendTextMessage(msg['text'])
             else:  # CARD message
+                print('card msg')
                 body = msg['body'] if 'body' in msg else list()
                 self.sendAdaptiveCardMessage(actions=msg['actions'], body=body)
 
