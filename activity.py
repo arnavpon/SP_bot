@@ -294,6 +294,7 @@ class Activity():
                         "actions": actions
                     }
                 }]
+                print("Attachment: {}".format(attachment))
                 message_shell.update(attachments=attachment)  # update shell w/ attachments
         pprint(message_shell)
         self.deliverMessage(return_url, head, message_shell)
