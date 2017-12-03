@@ -256,8 +256,11 @@ class Activity():
                 buttons = list()  # initialize list of action buttons
                 for action in actions:  # construct Facebook Messenger button for each action - *LIMIT 3 BUTTONS!*
                     print(action)
-                    if action['type'] == "Action.ShowCard":  # dropdown card - create button for title
+                    if action['type'] == "Action.ShowCard":  # dropdown card - deliver new set of buttons
                         break
+                        self.sendTextMessage(text=action['title'])
+                        for b in action[]:
+                            pass
                         button = {
                                 "type": "postback",
                                 "title": action['card']['body'][0]['text'],
@@ -270,7 +273,7 @@ class Activity():
                             "title": action['title'],
                             "payload": action['data']
                         }
-                        # payload = action['data'], <Str> payload works!
+                        # payload = action['data'],  <Str> payload works!
                         buttons.append(button)  # add button to list
 
                 attachment = {
