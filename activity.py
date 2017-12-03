@@ -271,7 +271,7 @@ class Activity():
                                 additional_messages.append({"body": show_title, "actions": show_actions[:3]})
                             elif (i + 1) % 3 == 0:  # another set of 3 cards
                                 additional_messages.append({"actions": show_actions[(i-2):(i+1)]})
-                        print(additional_messages)  # ***
+                        print("*: ", additional_messages)  # ***
 
                     else:  # DEFAULT card type
                         button = {
