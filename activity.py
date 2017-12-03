@@ -281,16 +281,14 @@ class Activity():
                         }  # payload MUST be <Str>, to send dict payload transmit as JSON (BotFramework handles)
                         buttons.append(button)  # add button to list
 
-                payload = {
-                    "template_type": "button",
-                    "buttons": buttons
-                }
-                if len(card_title) > 0:  # NON-empty card title
-                    payload.update(text=card_title)
                 attachment = {
                     "attachment": {
                         "type": "template",
-                        "payload": payload
+                        "payload": {
+                            "template_type": "button",
+                            "text": card_title,
+                            "buttons": buttons
+                        }
                     }
                 }
                 message_shell.update(message=attachment)  # update shell w/ attachments
