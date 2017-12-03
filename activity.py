@@ -251,7 +251,7 @@ class Activity():
             if self.routeDirectToFacebook():  # construct Facebook-specific card
                 card_title = ""
                 for block in body:  # body is a LIST of text blocks - combine into single string
-                    card_title += block['text'] + "\n\n"
+                    card_title += block['text'] + "\n\n"  # '\n' is handled CORRECTLY by messenger
 
                 buttons = list()  # initialize list of action buttons
                 for action in actions:  # construct Facebook Messenger button for each action - *LIMIT 3 BUTTONS!*
@@ -268,9 +268,9 @@ class Activity():
                         button = {
                             "type": "postback",
                             "title": action['title'],
-                            "payload": action['title']
+                            "payload": action['data']
                         }
-                        # payload = action['data']
+                        # payload = action['data'], <Str> payload works!
                         buttons.append(button)  # add button to list
 
                 attachment = {
