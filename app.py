@@ -26,7 +26,7 @@ class MainHandler(web.RequestHandler):
                 # self.write("Deleted {} conversations...".format(result.deleted_count))
                 global CONVERSATIONS
                 CONVERSATIONS = dict()  # remove cached list of existing conversations (for reset)
-                self.write("[Server] CONVERSATION cache has been cleared...")
+                self.write("<br>[Server] CONVERSATION cache has been cleared...")
         client.close()
 
     def post(self, *args, **kwargs):  # incoming POST request
