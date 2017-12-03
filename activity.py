@@ -218,9 +218,12 @@ class Activity():
                 text = self.reformatText(text, r'\*\*', '+')  # modify the ** -> a + temporarily
                 text = self.reformatText(text, r'\*', '_')  # modify the * -> a _ (italic in Facebook)
                 text = self.reformatText(text, r'\+', '*')  # modify the + -> * (bold in Facebook)
-                message_shell.update(text=text)
-            else:
+
+            if self.routeDirectToFacebook():  # routing -> Facebook Messenger
+                message_shell.update(message={"text": text})
+            else:  # routing through BotFramework
                 message_shell.update(text=text)  # update shell w/ text
+
         pprint(message_shell)
         self.deliverMessage(return_url, head, message_shell)
 
@@ -242,11 +245,12 @@ class Activity():
         pprint(message_shell)
         self.deliverMessage(return_url, head, message_shell)
 
-    def sendAdaptiveCardMessage(self, body, actions):  # sends an AdaptiveCard message w/ body (title) & actions
+    def sendAdaptiveCardMessage(self, actions, body=list()):  # sends an AdaptiveCard message w/ body (title) & actions
         # 'buttons': an ARRAY of DICTS (keys = TYPE, TITLE, & VALUE) | see bot_framework documentation
         return_url = self.getResponseURL()  # (1) get return URL
         head = self.getResponseHeader()  # (2) get OUT-going auth token for the header
         message_shell = self.getMessageShell()  # (3) construct the message outline
+        additional_messages = list()  # list of additional messages after first to send
         if len(actions) > 0:  # make sure there is at least 1 action before creating attachment
             if self.routeDirectToFacebook():  # construct Facebook-specific card
                 card_title = ""
@@ -254,34 +258,48 @@ class Activity():
                     card_title += block['text'] + "\n\n"  # '\n' is handled CORRECTLY by messenger
 
                 buttons = list()  # initialize list of action buttons
-                for action in actions:  # construct Facebook Messenger button for each action - *LIMIT 3 BUTTONS!*
+                for action in actions:  # construct Facebook Messenger button template for each action - *LIMIT 3!*
                     print(action)
-                    if action['type'] == "Action.ShowCard":  # dropdown card - deliver new set of buttons
-                        pass
-                        # self.sendTextMessage(text=action['title'])  # sending TXT will NOT be formatted properly!***
-                        # button = {
-                        #         "type": "postback",
-                        #         "title": action['card']['body'][0]['text'],
-                        #         "payload": action['card']['body'][0]['text']
-                        # }
-                        # buttons.append(button)  # add to list
-                    else:  # default card type
+                    if action['type'] == "Action.ShowCard":  # dropdown card - cache options in send queue
+                        additional_messages.append({"text": action['title']})  # put title in send queue
+                        show_title = ""
+                        for body_item in action['card']['body']:  # combine all body items into 1 string
+                            show_title += body_item['text'] + "\n\n"  # separate strings w/ newline character
+                        show_actions = action['card']['actions']  # list of dropdown actions
+                        show_buttons = list()
+                        for i, show_action in enumerate(show_actions):  # get each action button
+                            button = {
+                                "type": "postback",
+                                "title": show_action['title'],
+                                "payload": json.dumps(show_action['data'])
+                            }
+                            show_buttons.append(button)
+
+                            # Every 3 buttons (limit), create new button template card:
+                            if i == 2:  # FIRST set of cards for ShowCard - add title
+                                additional_messages.append({"body": show_title, "actions": show_buttons})
+                            elif (i + 1) % 3 == 0:  # another set of 3 cards
+                                additional_messages.append({"actions": show_buttons})
+                            show_buttons = list()  # clear button list
+
+                    else:  # DEFAULT card type
                         button = {
                             "type": "postback",
                             "title": action['title'],
                             "payload": json.dumps(action['data'])
-                        }
-                        # only string payload works
+                        }  # payload MUST be <Str>, to send dict payload transmit as JSON (BotFramework handles)
                         buttons.append(button)  # add button to list
 
+                payload = {
+                    "template_type": "button",
+                    "buttons": buttons
+                }
+                if len(card_title) > 0:  # NON-empty card title
+                    payload.update(text=card_title)
                 attachment = {
                     "attachment": {
                         "type": "template",
-                        "payload": {
-                            "template_type": "button",
-                            "text": card_title,
-                            "buttons": buttons
-                        }
+                        "payload": payload
                     }
                 }
                 message_shell.update(message=attachment)  # update shell w/ attachments
@@ -299,18 +317,12 @@ class Activity():
         pprint(message_shell)
         self.deliverMessage(return_url, head, message_shell)
 
-    # def createMessage(self, **kwargs):  # function call to create message w/ any text &/or attachments
-    #     return_url = self.getResponseURL()  # (1) get return URL
-    #     head = self.getResponseHeader()  # (2) get OUT-going auth token for the header
-    #     message_shell = self.getMessageShell()  # (3) construct the message outline
-    #     message_shell = self.addTextToMessage(message_shell, kwargs.get('text', None)) # (4A) add any text
-    #     message_shell = self.addAdaptiveCardToMessage(message_shell, body=kwargs.get('body', []),
-    #                                                   actions=kwargs.get('actions', []))  # (4B) add adaptive card
-    #     message_shell = self.addHeroCardToMessage(message_shell, buttons=kwargs.get('buttons', []),
-    #                                               title=kwargs.get('card_title', []),
-    #                                               subtitle=kwargs.get('card_subtitle', []),
-    #                                               text=kwargs.get('card_text', []))  # (4C) add hero card
-    #     pprint(message_shell)
+        for msg in additional_messages:  # send all additional messages AFTER main message
+            if "text" in msg:  # TEXT message
+                self.sendTextMessage(msg['text'])
+            else:  # CARD message
+                body = msg['body'] if 'body' in msg else list()
+                self.sendAdaptiveCardMessage(actions=msg['actions'], body=body)
 
     def deliverMessage(self, return_url, head, message_shell):  # delivers message to URL
         req = requests.post(return_url, data=json.dumps(message_shell), headers=head)  # send response
