@@ -77,13 +77,13 @@ class FeedbackModule:
                         block += item
                         body.append(self.__activity.createTextBlock(block))
                 actions = [
-                    self.__activity.createAction("Sounds Good", option_key="1", option_value=None),
+                    self.__activity.createAction("Sounds Good", option_key="2", option_value=None),
                 ]
                 self.__activity.sendAdaptiveCardMessage(body=body, actions=actions)  # present feedback via card
                 self.__position = -5
         elif self.__position == -6:  # user acknowledged the Interview score - ask for feedback before close
             received_value = self.__post_body.get('value', dict())  # make sure correct option was selected
-            if "1" in received_value:  # make sure selection comes from correct button
+            if "2" in received_value:  # make sure selection comes from correct button
                 self.__activity.createTextMessage(text="Great Job! Before you go, I'd really appreciate it if you "
                                                        "would give me some feedback on your experience today.")
                 self.__activity.createTextMessage(text="Just type in your thoughts below (as many as you want), "

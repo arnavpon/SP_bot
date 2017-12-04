@@ -59,15 +59,15 @@ class Activity():
                         elif "category" in received_value:  # user selected a CATEGORY (specialty)
                             cat = received_value['category']  # get the selected category name
                             ccs_for_cat = Patient.getChiefComplaintsForCategory(cat)  # get CCs for specified category
-                            if cat == "Internal Medicine":  # map -> abbreviation so name displays fully
+                            if cat.lower() == "internal medicine":  # map -> abbreviation so name displays fully
                                 cat = "IM"
-                            elif cat == "Family Medicine":
+                            elif cat.lower() == "family medicine":
                                 cat = "FM"
-                            elif cat == "Psychiatry":
+                            elif cat.lower() == "psychiatry":
                                 cat = "Psych"
-                            elif cat == "Neurology":
+                            elif cat.lower() == "neurology":
                                 cat = "Neuro"
-                            elif cat == "Pediatrics":
+                            elif cat.lower() == "pediatrics":
                                 cat = "Peds"
                             show_actions = [self.createAction(cc.title(), option_key="intro_2",
                                                                   option_value={"id": str(_id)})
@@ -98,7 +98,7 @@ class Activity():
                         UPDATED_POSITION = 3  # move to next position in flow
 
     def initializeBot(self):  # renders initial (position = 0) flow for the bot
-        global UPDATED_POSITION
+        self.__patient = None  # *clear existing patient object to start!*
         categories = Patient.getAllCategories()  # fetch set of all categories
 
         # Create a list of sub-actions (for the ShowCard) by category:
@@ -113,10 +113,12 @@ class Activity():
         actions = [
             self.createAction("Choose random case", option_key="intro_1", option_value={"option": 0}),
             self.createAction("Select case by specialty", type=1,
-                              body=[self.createTextBlock("Choose a specialty:")],
+                              body=[self.createTextBlock("Choose by specialty:")],
                               actions=show_actions)
         ]
         self.sendAdaptiveCardMessage(body=body, actions=actions)  # deliver card -> user
+        
+        global UPDATED_POSITION
         UPDATED_POSITION = 1  # update the position to prevent out-of-flow actions
 
     def renderIntroductoryMessage(self):  # send message that introduces patient & BEGINS the encounter
@@ -328,6 +330,9 @@ class Activity():
                 message_shell.update(attachments=attachment)  # update shell w/ attachments
         pprint(message_shell)
         self.deliverMessage(return_url, head, message_shell)
+
+        # Restart issue - start screen shows but response goes -> LUIS directly
+        # this gets blocker set & stops flow
 
         print("\n[Additional]: ", additional_messages)
         for msg in additional_messages:  # send all additional messages AFTER main message

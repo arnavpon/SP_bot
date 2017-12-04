@@ -60,7 +60,7 @@ class MainHandler(web.RequestHandler):
             CONVERSATIONS[conversation] = {"position": 0, "patient": None}  # initialize cache
         position = CONVERSATIONS[conversation].get("position")  # check current position in flow
         print("Current position in conversation = [{}]".format(position))
-        patient = CONVERSATIONS[conversation].get("patient", None)  # create a patient object to pass -> Activity
+        patient = CONVERSATIONS[conversation].get("patient", None)  # get patient object to pass -> Activity
         if (patient) and (post_body.get("text", None) is not None):  # patient exists AND incoming msg is TEXT
             print("Blocker Set? {}".format(patient.isBlocked(conversation)))
             if not patient.isBlocked(conversation):  # blocker is NOT set - pass activity through
@@ -68,7 +68,7 @@ class MainHandler(web.RequestHandler):
                 current_activity = activity.Activity(authenticator, post_body, position, patient)  # init Activity
                 CONVERSATIONS[conversation].update(position=activity.UPDATED_POSITION)  # update position
                 CONVERSATIONS[conversation].update(patient=current_activity.getPatient())  # cache patient if it exists
-        else:
+        else:  # initialization flow
             current_activity = activity.Activity(authenticator, post_body, position, patient)  # init Activity
             CONVERSATIONS[conversation].update(position=activity.UPDATED_POSITION)  # update position
             CONVERSATIONS[conversation].update(patient=current_activity.getPatient())  # cache patient if it exists
