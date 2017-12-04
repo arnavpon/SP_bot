@@ -3,6 +3,7 @@
 import requests
 import json
 import re
+import math
 from random import randint
 from pprint import pprint
 from patient.patient import Patient
@@ -13,7 +14,7 @@ UPDATED_POSITION = None  # indicator used to prevent backwards actions in conver
 
 class Activity():
 
-    # --- INITIALIZER ---
+    # --- INITIALIZERS ---
     def __init__(self, authenticator, post_body, position, patient=None):  # initializer
         print("\nInitializing ACTIVITY object w/ JSON data:")
         pprint(post_body)  # output JSON from bot client
@@ -29,24 +30,7 @@ class Activity():
             feedback_handler = FeedbackModule(self, position)  # init w/ <Activity> instance & position in flow
             UPDATED_POSITION = feedback_handler.getPosition()  # obtain position from handler
         elif position == 0:  # INITIAL interaction - send introductory options
-            categories = Patient.getAllCategories()  # fetch set of all categories
-
-            # Create a list of sub-actions (for the ShowCard) by category:
-            show_actions = [self.createAction(cat.title(), option_key='intro_1', option_value={"category": cat})
-                            for cat in categories]  # set the selection option -> the category name
-
-            body = [
-                self.createTextBlock("Welcome to the Interview Bot!", size="large", weight="bolder"),
-                self.createTextBlock("Please select an option to get started:")
-            ]
-            actions = [
-                self.createAction("Choose a random case", option_key="intro_1", option_value={"option": 0}),
-                self.createAction("Select case by specialty", type=1,
-                                      body=[self.createTextBlock("Choose a specialty:")],
-                                      actions=show_actions)
-            ]
-            self.sendAdaptiveCardMessage(body=body, actions=actions)
-            UPDATED_POSITION = position + 1  # update the position to prevent out-of-flow actions
+            self.initializeBot()
         else:  # get the activity type, use it to handle what methods are performed
             self.activityType = post_body['type']
             if self.activityType == "message":  # POST a response to the message to the designated URL
@@ -55,6 +39,8 @@ class Activity():
                     if received_text.strip().upper() == "END ENCOUNTER":  # close the encounter
                         feedback_handler = FeedbackModule(self, 0)  # init Feedback Module object to handle next step
                         UPDATED_POSITION = feedback_handler.getPosition()  # NEGATIVE position => encounter was CLOSED
+                    elif received_text.strip().upper() == "RESTART":  # restart from scratch
+                        self.initializeBot()  # start bot at position 0 again
                     else:  # question for the bot
                         _ = LUIS(received_text, self)  # pass the user's input -> a LUIS object
 
@@ -73,6 +59,16 @@ class Activity():
                         elif "category" in received_value:  # user selected a CATEGORY (specialty)
                             cat = received_value['category']  # get the selected category name
                             ccs_for_cat = Patient.getChiefComplaintsForCategory(cat)  # get CCs for specified category
+                            if cat == "Internal Medicine":  # map -> abbreviation so name displays fully
+                                cat = "IM"
+                            elif cat == "Family Medicine":
+                                cat = "FM"
+                            elif cat == "Psychiatry":
+                                cat = "Psych"
+                            elif cat == "Neurology":
+                                cat = "Neuro"
+                            elif cat == "Pediatrics":
+                                cat = "Peds"
                             show_actions = [self.createAction(cc.title(), option_key="intro_2",
                                                                   option_value={"id": str(_id)})
                                             for cc, _id in ccs_for_cat]  # create show card actions
@@ -80,10 +76,10 @@ class Activity():
                                 self.createTextBlock("What would you like to do?")
                             ]
                             actions = [
-                                self.createAction("Choose random {} case".format(cat), option_key="intro_2",
+                                self.createAction("Random {} case".format(cat), option_key="intro_2",
                                                   option_value={"option": 0, "category": cat}),
-                                self.createAction("Select specific case by chief complaint", type=1,
-                                                  body=[self.createTextBlock("Choose a chief complaint:")],
+                                self.createAction("Choose by chief complaint", type=1,
+                                                  body=[self.createTextBlock("Select chief complaint:")],
                                                   actions=show_actions)
                             ]
                             self.sendAdaptiveCardMessage(body=body, actions=actions)  # present 2 new options via card
@@ -101,6 +97,28 @@ class Activity():
                             self.renderIntroductoryMessage()
                         UPDATED_POSITION = 3  # move to next position in flow
 
+    def initializeBot(self):  # renders initial (position = 0) flow for the bot
+        global UPDATED_POSITION
+        categories = Patient.getAllCategories()  # fetch set of all categories
+
+        # Create a list of sub-actions (for the ShowCard) by category:
+        show_actions = [
+            self.createAction(cat.title(), option_key='intro_1', option_value={"category": cat})
+            for cat in categories]  # set the selection option -> the category name
+
+        body = [
+            self.createTextBlock("Welcome to the Interview Bot!", size="large", weight="bolder"),
+            self.createTextBlock("Please select an option to get started:")
+        ]
+        actions = [
+            self.createAction("Choose random case", option_key="intro_1", option_value={"option": 0}),
+            self.createAction("Select case by specialty", type=1,
+                              body=[self.createTextBlock("Choose a specialty:")],
+                              actions=show_actions)
+        ]
+        self.sendAdaptiveCardMessage(body=body, actions=actions)  # deliver card -> user
+        UPDATED_POSITION = 1  # update the position to prevent out-of-flow actions
+
     def renderIntroductoryMessage(self):  # send message that introduces patient & BEGINS the encounter
         self.sendTextMessage(text="Your patient is {}, a **{}** {}-old **{}** "
                                   "complaining of **{}**".format(self.__patient.name,
@@ -108,7 +126,8 @@ class Activity():
                                                                  self.__patient.age[1],
                                                                  self.__patient.gender,
                                                                  self.__patient.chief_complaint))
-        self.sendTextMessage(text="*You can now begin taking the history.* "
+        self.sendTextMessage(text="*You can now begin taking a history.*")
+        self.sendTextMessage(text="Type **RESTART** to reset the encounter at any time. "
                                   "Type **END ENCOUNTER** when you're ready to end the interview & get your score.")
 
     # --- ADAPTIVE CARD ELEMENTS ---
@@ -131,7 +150,6 @@ class Activity():
 
     def createAction(cls, title, type=0, **kwargs):  # creates ACTION button for Adaptive card
         cls.__action_required = True  # set indicator that action is required for response
-        print("[CreateAction] Setting action required -> True...")  # ***
         action = {
             'title': title
         }
@@ -193,12 +211,15 @@ class Activity():
                 "recipient": self.__postBody['from'],
                 "replyToId": self.__postBody['id']
             }
-        print(message_data)
         return message_data
 
-    def reformatText(self, text, old_markup, new_markup):  # uses regex to reformat a string
-        print("Reformatting {} with {}".format(old_markup, new_markup))
-        print("[reformat] BEFORE = [{}]".format(text))
+    def modifyTextFormattingForFacebook(self, text):  # converts from BotFramework -> Facebook formatting
+        text = self.reformatText(text, r'\*\*', '+')  # modify the ** -> a + temporarily
+        text = self.reformatText(text, r'\*', '_')  # modify the * -> a _ (italic in Facebook)
+        text = self.reformatText(text, r'\+', '*')  # modify the + -> * (bold in Facebook)
+        return text
+
+    def reformatText(self, text, old_markup, new_markup):  # reformats string formatting to match different protocols
         indexes = list()  # construct a list of START indexes for matches
         match_len = 0  # size of markup string
         for match in re.finditer(old_markup, text):  # find all bold markup
@@ -206,7 +227,6 @@ class Activity():
             match_len = match.span()[1] - match.span()[0]  # find length of expression
         for i in reversed(indexes):  # REVERSE the index & modify the string from BACK -> FRONT
             text = text[:i] + new_markup + text[(i + match_len):]
-        print("[reformat] AFTER = [{}]".format(text))
         return text
 
     def sendTextMessage(self, text):  # sends text message
@@ -215,10 +235,7 @@ class Activity():
         message_shell = self.getMessageShell()  # (3) construct the message outline
         if text is not None:  # ONLY add text to message if it is NOT None
             if self.__channel_id == "facebook":  # re-format bold & italic markup for Facebook Messenger
-                print("\nReformatting text for FB Messenger: ")
-                text = self.reformatText(text, r'\*\*', '+')  # modify the ** -> a + temporarily
-                text = self.reformatText(text, r'\*', '_')  # modify the * -> a _ (italic in Facebook)
-                text = self.reformatText(text, r'\+', '*')  # modify the + -> * (bold in Facebook)
+                text = self.modifyTextFormattingForFacebook(text)
 
             if self.routeDirectToFacebook():  # routing -> Facebook Messenger
                 message_shell.update(message={"text": text})
@@ -254,23 +271,27 @@ class Activity():
         additional_messages = list()  # list of additional messages after first to send
         if len(actions) > 0:  # make sure there is at least 1 action before creating attachment
             if self.routeDirectToFacebook():  # construct Facebook-specific card
-                card_title = "> "  # init as empty string
-                for block in body:  # body is a LIST of text blocks - combine into single string
-                    card_title += block['text'] + "\n\n"  # '\n' is handled CORRECTLY by messenger
+                card_title = ""  # init as empty string
+                for block in body:  # body is a LIST of text blocks - combine into single string, separate w/ newline
+                    card_title += self.modifyTextFormattingForFacebook(block['text']) + "\n\n"
 
                 buttons = list()  # initialize list of action buttons
-                for action in actions:  # construct Facebook Messenger button template for each action - *LIMIT 3!*
+                for action in actions:  # construct Facebook Messenger button for each action - *LIMIT 3 per template!*
                     print(action)
                     if action['type'] == "Action.ShowCard":  # dropdown card - cache options in send queue
-                        print("Show Card")
-                        additional_messages.append({"text": action['title']})  # put title in send queue
                         show_title = action['card']['body']  # get list of body items
                         show_actions = action['card']['actions']  # list of dropdown actions
                         for i, _ in enumerate(show_actions):  # every 3 buttons (limit), create new template card
                             if i == 2:  # FIRST set of cards for ShowCard - add title
                                 additional_messages.append({"body": show_title, "actions": show_actions[:3]})
                             elif (i + 1) % 3 == 0:  # another set of 3 cards
-                                additional_messages.append({"actions": show_actions[(i-2):(i+1)]})
+                                additional_messages.append({"body": "...", "actions": show_actions[(i-2):(i+1)]})
+                            elif i == (len(show_actions) - 1):  # reached end of actions list
+                                index = math.floor(i / 3) * 3  # get endIndex of previous group of 3
+                                if i >= 2:  # title has already been displayed
+                                    additional_messages.append({"body": "...", "actions": show_actions[index:]})
+                                else:  # no title shown yet - include title
+                                    additional_messages.append({"body": show_title, "actions": show_actions[index:]})
                         print("*: ", additional_messages)  # ***
 
                     else:  # DEFAULT card type
@@ -306,7 +327,7 @@ class Activity():
         pprint(message_shell)
         self.deliverMessage(return_url, head, message_shell)
 
-        print(additional_messages)
+        print("\n", additional_messages)
         for msg in additional_messages:  # send all additional messages AFTER main message
             print("Delivering additional message [{}]...".format(msg))
             if "text" in msg:  # TEXT message
