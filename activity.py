@@ -282,14 +282,15 @@ class Activity():
                         show_title = action['card']['body']  # get list of body items
                         show_actions = action['card']['actions']  # list of dropdown actions
                         for i, _ in enumerate(show_actions):  # every 3 buttons (limit), create new template card
+                            empty_title = [self.createTextBlock(text="...")]
                             if i == 2:  # FIRST set of cards for ShowCard - add title
                                 additional_messages.append({"body": show_title, "actions": show_actions[:3]})
                             elif (i + 1) % 3 == 0:  # another set of 3 cards
-                                additional_messages.append({"body": ["..."], "actions": show_actions[(i-2):(i+1)]})
+                                additional_messages.append({"body": empty_title, "actions": show_actions[(i-2):(i+1)]})
                             elif i == (len(show_actions) - 1):  # reached end of actions list
                                 index = math.floor(i / 3) * 3  # get END index of previous group of 3
                                 if i >= 2:  # title has already been displayed
-                                    additional_messages.append({"body": ["..."], "actions": show_actions[index:]})
+                                    additional_messages.append({"body": empty_title, "actions": show_actions[index:]})
                                 else:  # no title shown yet - include title
                                     additional_messages.append({"body": show_title, "actions": show_actions[index:]})
 
