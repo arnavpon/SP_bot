@@ -73,13 +73,13 @@ class Activity():
                                                                   option_value={"id": str(_id)})
                                             for cc, _id in ccs_for_cat]  # create show card actions
                             body = [
-                                self.createTextBlock("What would you like to do?")
+                                self.createTextBlock("Which do you prefer?")
                             ]
                             actions = [
                                 self.createAction("Random {} case".format(cat), option_key="intro_2",
                                                   option_value={"option": 0, "category": cat}),
                                 self.createAction("Choose by chief complaint", type=1,
-                                                  body=[self.createTextBlock("Select chief complaint:")],
+                                                  body=[self.createTextBlock("Select a chief complaint:")],
                                                   actions=show_actions)
                             ]
                             self.sendAdaptiveCardMessage(body=body, actions=actions)  # present 2 new options via card
@@ -273,11 +273,14 @@ class Activity():
             if self.routeDirectToFacebook():  # construct Facebook-specific card
                 card_title = ""  # init as empty string
                 for block in body:  # body is a LIST of text blocks - combine into single string, separate w/ newline
-                    card_title += self.modifyTextFormattingForFacebook(block['text']) + "\n\n"
+                    to_add = block['text']
+                    if len(card_title) + len(to_add) + 2 >= 640:  # limit of 640 characters to Facebook messenger
+                        break  # terminate loop
+                    card_title += self.modifyTextFormattingForFacebook(to_add) + "\n\n"
 
                 buttons = list()  # initialize list of action buttons
                 for action in actions:  # construct Facebook Messenger button for each action - *LIMIT 3 per template!*
-                    print(action)
+                    print(action) # ***
                     if action['type'] == "Action.ShowCard":  # SHOW card - send options in separate cards
                         show_title = action['card']['body']  # get list of body items
                         show_actions = action['card']['actions']  # list of dropdown actions
@@ -322,19 +325,16 @@ class Activity():
                         "actions": actions
                     }
                 }]
-                print("Attachment: {}".format(attachment))
                 message_shell.update(attachments=attachment)  # update shell w/ attachments
         pprint(message_shell)
         self.deliverMessage(return_url, head, message_shell)
 
-        print("\n", additional_messages)
+        print("\n[Additional]: ", additional_messages)
         for msg in additional_messages:  # send all additional messages AFTER main message
             print("Delivering additional message [{}]...".format(msg))
             if "text" in msg:  # TEXT message
-                print("txt msg")
                 self.sendTextMessage(msg['text'])
             else:  # CARD message
-                print('card msg')
                 title = msg['body'] if 'body' in msg else list()
                 self.sendAdaptiveCardMessage(actions=msg['actions'], body=title)
 

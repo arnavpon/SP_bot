@@ -41,20 +41,27 @@ class FeedbackModule:
                     self.__activity.createTextBlock("**(2)** {}".format(self.__patient.differentials[1][0])),
                     self.__activity.createTextBlock("**(3)** {}".format(self.__patient.differentials[2][0]))
                 ]
-                dropdown_body = [self.__activity.createTextBlock("### Key Points")]  # init dropdown text
+                actions = [self.__activity.createAction("OK", option_key="0", option_value=None)]
+                self.__activity.sendAdaptiveCardMessage(body=body, actions=actions)  # present feedback -> user via card
+                self.__position = -4
+        elif self.__position == -4:  # (4) display key points
+            received_value = self.__post_body.get('value', dict())  # make sure correct option was selected
+            if "0" in received_value:  # verify correct button was clicked
+                self.__patient.differentials[2] = (self.__patient.differentials[2][0], response.strip())  # store DD3
+                print(self.__patient.differentials)
+                body = [self.__activity.createTextBlock("### Key Points")]  # init body text
                 for poe in self.__patient.points_of_emphasis:  # display each POE
                     for i, item in enumerate(self.formatTextBlock(poe)):  # format lines so they display correctly
                         block = ""  # initialize
                         if i == 0: block += "-- "  # 1st line for each point gets a double dash
                         block += item
-                        dropdown_body.append(self.__activity.createTextBlock(block))
-                dropdown_btn = [self.__activity.createAction("Got It!", option_key="0", option_value=None)]
-                actions = [self.__activity.createAction("OK", type=1, body=dropdown_body, actions=dropdown_btn)]
+                        body.append(self.__activity.createTextBlock(block))
+                actions = [self.__activity.createAction("Got It!", option_key="1", option_value=None)]
                 self.__activity.sendAdaptiveCardMessage(body=body, actions=actions)  # present feedback -> user via card
-                self.__position = -4
-        elif self.__position == -4:  # user acknowledged Differential Diagnosis score - provide Interview Score
+                self.__position = -5
+        elif self.__position == -5:  # user acknowledged Differential Diagnosis score - provide Interview Score
             received_value = self.__post_body.get('value', dict())  # make sure correct option was selected
-            if "0" in received_value:  # make sure selection comes from correct button
+            if "1" in received_value:  # make sure selection comes from correct button
                 body = [
                     self.__activity.createTextBlock("### Interview Feedback"),
                     self.__activity.createTextBlock("You asked **{}%** of the "
@@ -74,7 +81,7 @@ class FeedbackModule:
                 ]
                 self.__activity.sendAdaptiveCardMessage(body=body, actions=actions)  # present feedback via card
                 self.__position = -5
-        elif self.__position == -5:  # user acknowledged the Interview score - ask for feedback before close
+        elif self.__position == -6:  # user acknowledged the Interview score - ask for feedback before close
             received_value = self.__post_body.get('value', dict())  # make sure correct option was selected
             if "1" in received_value:  # make sure selection comes from correct button
                 self.__activity.createTextMessage(text="Great Job! Before you go, I'd really appreciate it if you "
@@ -86,6 +93,7 @@ class FeedbackModule:
             if response:
                 self.__patient.logFeedback(self.__activity.getConversationID(), response) # log feedback to DB
                 self.__patient.removeBlock(self.__activity.getConversationID())  # remove blocker (b/c no msg is sent)!
+                # how do we restart the encounter?!? maybe add button to previous menu to RESTART
 
     def formatTextBlock(self, string):  # returns a LIST of text block items using the input string
         blocks = list()
