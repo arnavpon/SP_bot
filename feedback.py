@@ -47,8 +47,6 @@ class FeedbackModule:
         elif self.__position == -4:  # (4) display key points
             received_value = self.__post_body.get('value', dict())  # make sure correct option was selected
             if "0" in received_value:  # verify correct button was clicked
-                self.__patient.differentials[2] = (self.__patient.differentials[2][0], response.strip())  # store DD3
-                print(self.__patient.differentials)
                 body = [self.__activity.createTextBlock("### Key Points")]  # init body text
                 for poe in self.__patient.points_of_emphasis:  # display each POE
                     for i, item in enumerate(self.formatTextBlock(poe)):  # format lines so they display correctly
@@ -84,9 +82,9 @@ class FeedbackModule:
         elif self.__position == -6:  # user acknowledged the Interview score - ask for feedback before close
             received_value = self.__post_body.get('value', dict())  # make sure correct option was selected
             if "2" in received_value:  # make sure selection comes from correct button
-                self.__activity.createTextMessage(text="Great Job! Before you go, I'd really appreciate it if you "
+                self.__activity.sendTextMessage(text="Great Job! Before you go, I'd really appreciate it if you "
                                                        "would give me some feedback on your experience today.")
-                self.__activity.createTextMessage(text="Just type in your thoughts below (as many as you want), "
+                self.__activity.sendTextMessage(text="Just type in your thoughts below (as many as you want), "
                                                        "and then close the client when you're finished. Thanks!")
                 self.__position = -6
         else:  # user provided feedback

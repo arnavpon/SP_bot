@@ -331,8 +331,8 @@ class Activity():
         pprint(message_shell)
         self.deliverMessage(return_url, head, message_shell)
 
-        # Restart issue - start screen shows but response goes -> LUIS directly
-        # this gets blocker set & stops flow
+        # Issues-
+        # immature JWT keeps happening!
 
         print("\n[Additional]: ", additional_messages)
         for msg in additional_messages:  # send all additional messages AFTER main message

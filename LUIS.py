@@ -148,9 +148,6 @@ class LUIS:
         #      - refer to FB messenger documentation:
         #      - 1) Modify bot to comply w/ FB guidelines, need privacyURL (lookup?)
         #      - 2) Submit fully compliant bot -> FB for publishing (can test as admin/tester/dev w/o publish!)
-        #      - 3) Update formatting BASED ON CHANNEL (create class): display doesn't translate from BF -> FB messenger
-        #           card is completely incorrectly displayed, how to modify??? pass raw JSON through bot framework?
-        #           bold & italics don't display properly
         #      - 4) How do we refresh from inside FB messenger to start new conversation?!?
         #           deleting convo & restarting picks up from previous point, which we DO NOT want
         #           no conversation update is provided by either framework
@@ -308,7 +305,7 @@ class LUIS:
 
         # (LAST) Persist the scope object & then render the bot's response:
         self.__patient.persistCurrentScope(self.__activity.getConversationID(), self.__scope.getScopeForDB())
-        self.__activity.createMessage(text="[{}] '{}'".format(self.__topIntent.intent, self.__response))  # send msg
+        self.__activity.sendTextMessage(text="[{}] '{}'".format(self.__topIntent.intent, self.__response))  # send msg
 
     # --- <CROSS-ELEMENT> INTENT HANDLERS ---
     def handleGetAgeIntent(self, query_word):  # "GET_AGE" intent
