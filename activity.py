@@ -244,7 +244,6 @@ class Activity():
                 message_shell.update(message={"text": text})
             else:  # routing through BotFramework
                 message_shell.update(text=text)  # update shell w/ text
-
         pprint(message_shell)
         self.deliverMessage(return_url, head, message_shell)
 
@@ -275,15 +274,16 @@ class Activity():
         if len(actions) > 0:  # make sure there is at least 1 action before creating attachment
             if self.routeDirectToFacebook():  # construct Facebook-specific card
                 card_title = ""  # init as empty string
-                for block in body:  # body is a LIST of text blocks - combine into single string, separate w/ newline
+                for i, block in enumerate(body):  # body is LIST of text blocks - combine into single string
                     to_add = block['text']
                     if len(card_title) + len(to_add) + 2 >= 640:  # limit of 640 characters to Facebook messenger
+                        remainder = body[i:]  # un-sent block elements go w/ next card
+                        additional_messages.append({"body": remainder, "actions": actions})  # attach SAME actions
                         break  # terminate loop
                     card_title += self.modifyTextFormattingForFacebook(to_add) + "\n\n"
 
                 buttons = list()  # initialize list of action buttons
                 for action in actions:  # construct Facebook Messenger button for each action - *LIMIT 3 per template!*
-                    print(action) # ***
                     if action['type'] == "Action.ShowCard":  # SHOW card - send options in separate cards
                         show_title = action['card']['body']  # get list of body items
                         show_actions = action['card']['actions']  # list of dropdown actions
@@ -299,13 +299,12 @@ class Activity():
                                     additional_messages.append({"body": empty_title, "actions": show_actions[index:]})
                                 else:  # no title shown yet - include title
                                     additional_messages.append({"body": show_title, "actions": show_actions[index:]})
-
                     else:  # DEFAULT card type
                         button = {
                             "type": "postback",
                             "title": action['title'],
                             "payload": json.dumps(action['data'])
-                        }  # payload MUST be <Str>, to send dict payload transmit as JSON (BotFramework handles)
+                        }  # payload MUST be <Str>, to send dict payload transmit as JSON (handled by BotFramework)
                         buttons.append(button)  # add button to list
 
                 attachment = {
@@ -319,6 +318,7 @@ class Activity():
                     }
                 }
                 message_shell.update(message=attachment)  # update shell w/ attachments
+
             else:  # BotFramework message
                 attachment = [{
                     "contentType": "application/vnd.microsoft.card.adaptive",
@@ -329,14 +329,9 @@ class Activity():
                     }
                 }]
                 message_shell.update(attachments=attachment)  # update shell w/ attachments
+
         pprint(message_shell)
-        self.deliverMessage(return_url, head, message_shell)
-
-        # Issues-
-        # immature JWT keeps happening! maybe if this error is found, pause & then re-decode?
-        # for truncated card bodies, need to send remainder of card somewhere...
-
-        print("\n[Additional]: ", additional_messages)
+        self.deliverMessage(return_url, head, message_shell)  # send main message
         for msg in additional_messages:  # send all additional messages AFTER main message
             print("Delivering additional message [{}]...".format(msg))
             if "text" in msg:  # TEXT message
@@ -351,9 +346,7 @@ class Activity():
         if self.__patient:  # check if patient exists
             self.__patient.removeBlock(self.__conversation_id)  # remove block AFTER sending msg to prep for next query
         if req.status_code != 200:  # check for errors on delivery
-            print("[Delivery Error] Msg: {}".format(req.json()))
-        else:  # successful delivery
-            print("[Delivery SUCCESSFUL] Msg: {}".format(req.json()))
+            print("[Delivery ERROR] Msg: {}".format(req.json()))
 
     # --- ACCESSOR METHODS ---
     def getConversationID(self):
