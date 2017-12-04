@@ -137,7 +137,7 @@ class LUIS:
         query_word = e[0] if len(e) > 0 else ""  # store FIRST query that is found (b/c entities are sent IN ORDER)
 
         # How do we clean up the 'conversations' DB once the conversation is over?
-        # (2) Could remove all conversations when server stops, but server will constantly run so this isn't great
+        # Could remove all conversations when server stops, but server will constantly run so this isn't great
         #     - best bet is to delete conversation when SESSION is closed. How can server recognize that?
         #     - may need to create a SESSION on the server, get signal when session is terminated...
         #     - be careful not to remove the logged feedback, only the conversation!

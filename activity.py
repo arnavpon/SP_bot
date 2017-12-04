@@ -178,7 +178,6 @@ class Activity():
 
     def getResponseURL(self):  # uses info in POST body to construct URL to send response to
         if self.routeDirectToFacebook():  # Facebook messenger channel
-            print("Sending URL DIRECT -> Facebook!")  # ***
             access_token = "EAAD7sZBOYsK4BAJt95X17v6ZCstfHi3UgUkJZCcetgVEJpH6tFN5Ju3zQ2CTXJ" \
                            "M35o8gteO17Ixk5N96gQxUIJug5IsjSozCEogiuqgKQEfWGMf9HlIABFyC7wC4cRkugwaLssad" \
                            "9AVuPFXkw6muELn9jljXmL964bqvZCvioQZDZD"  # token to access SP Bot FB page
@@ -193,19 +192,19 @@ class Activity():
         head = {
             "Content-type": "application/json"
         }
-        if not self.routeDirectToFacebook():  # routing through Bot Framework - add authentication header
+        if not self.routeDirectToFacebook():  # routing through Bot Framework - add authorization header
             head["Authorization"] = 'Bearer {}'.format(self.__authenticator.authenticateOutgoingMessage())
         return head
 
     def getMessageShell(self):  # constructs the SHELL of the message (metadata w/o text or attachments)
-        if self.routeDirectToFacebook():
+        if self.routeDirectToFacebook():  # message direct -> Facebook messenger
             message_data = {
                 "messaging_type": "RESPONSE",
                 "recipient": {
                     "id": self.__postBody['from']['id']
                 }
             }
-        else:  # messages going through Bot Framework
+        else:  # (default) message going through Bot Framework
             message_data = {
                 "type": "message",
                 "locale": self.__postBody.get('locale', 'en-US'),

@@ -35,7 +35,7 @@ class FeedbackModule:
                 score = self.__patient.scoreDifferentialDiagnoses()
                 body = [
                     self.__activity.createTextBlock("### Differential Diagnosis Feedback"),
-                    self.__activity.createTextBlock("Your score was **{}**".format(score)),
+                    #self.__activity.createTextBlock("Your score was **{}**".format(score)),
                     self.__activity.createTextBlock("My top 3 differentials in order are: "),
                     self.__activity.createTextBlock("**(1)** {}".format(self.__patient.differentials[0][0])),
                     self.__activity.createTextBlock("**(2)** {}".format(self.__patient.differentials[1][0])),
