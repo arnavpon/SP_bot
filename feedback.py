@@ -74,24 +74,30 @@ class FeedbackModule:
                         if i == 0: block += "-- "  # 1st line for each point gets a double dash
                         block += item
                         body.append(self.__activity.createTextBlock(block))
-                actions = [
-                    self.__activity.createAction("Sounds Good", option_key="2", option_value=None),
-                ]
+                actions = [self.__activity.createAction("Sounds Good", option_key="2", option_value=None)]
                 self.__activity.sendAdaptiveCardMessage(body=body, actions=actions)  # present feedback via card
-                self.__position = -5
+                self.__position = -6
         elif self.__position == -6:  # user acknowledged the Interview score - ask for feedback before close
             received_value = self.__post_body.get('value', dict())  # make sure correct option was selected
             if "2" in received_value:  # make sure selection comes from correct button
                 self.__activity.sendTextMessage(text="Great Job! Before you go, I'd really appreciate it if you "
-                                                       "would give me some feedback on your experience today.")
+                                                     "would give me some feedback on your experience today.")
                 self.__activity.sendTextMessage(text="Just type in your thoughts below (as many as you want), "
-                                                       "and then close the client when you're finished. Thanks!")
-                self.__position = -6
+                                                     "and then close the client when you're finished. Thanks!")
+
+                # Menu to restart encounter:
+                body = [self.__activity.createTextBlock("To start new encounter: ")]
+                actions = [self.__activity.createAction("Reset Bot", option_key="reset", option_value=None)]
+                self.__activity.sendAdaptiveCardMessage(body=body, actions=actions)  # present feedback via card
+                self.__position = -7
         else:  # user provided feedback
-            if response:
+            received_value = self.__post_body.get('value', dict())  # make sure correct option was selected
+            if "reset" in received_value:  # user hit RESET button - start bot from top
+                self.__activity.initializeBot()  # re-initialize
+                self.__position = 1  # MUST manually set position to 1 again
+            elif response:  # text response => user FEEDBACK
                 self.__patient.logFeedback(self.__activity.getConversationID(), response) # log feedback to DB
                 self.__patient.removeBlock(self.__activity.getConversationID())  # remove blocker (b/c no msg is sent)!
-                # how do we restart the encounter?!? maybe add button to previous menu to RESTART
 
     def formatTextBlock(self, string):  # returns a LIST of text block items using the input string
         blocks = list()

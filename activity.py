@@ -332,7 +332,8 @@ class Activity():
         self.deliverMessage(return_url, head, message_shell)
 
         # Issues-
-        # immature JWT keeps happening!
+        # immature JWT keeps happening! maybe if this error is found, pause & then re-decode?
+        # error when selecting random patient for IM (empty randrange error)
 
         print("\n[Additional]: ", additional_messages)
         for msg in additional_messages:  # send all additional messages AFTER main message
