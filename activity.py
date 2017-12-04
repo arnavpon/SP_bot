@@ -278,21 +278,20 @@ class Activity():
                 buttons = list()  # initialize list of action buttons
                 for action in actions:  # construct Facebook Messenger button for each action - *LIMIT 3 per template!*
                     print(action)
-                    if action['type'] == "Action.ShowCard":  # dropdown card - cache options in send queue
+                    if action['type'] == "Action.ShowCard":  # SHOW card - send options in separate cards
                         show_title = action['card']['body']  # get list of body items
                         show_actions = action['card']['actions']  # list of dropdown actions
                         for i, _ in enumerate(show_actions):  # every 3 buttons (limit), create new template card
                             if i == 2:  # FIRST set of cards for ShowCard - add title
                                 additional_messages.append({"body": show_title, "actions": show_actions[:3]})
                             elif (i + 1) % 3 == 0:  # another set of 3 cards
-                                additional_messages.append({"body": "...", "actions": show_actions[(i-2):(i+1)]})
+                                additional_messages.append({"body": ["..."], "actions": show_actions[(i-2):(i+1)]})
                             elif i == (len(show_actions) - 1):  # reached end of actions list
-                                index = math.floor(i / 3) * 3  # get endIndex of previous group of 3
+                                index = math.floor(i / 3) * 3  # get END index of previous group of 3
                                 if i >= 2:  # title has already been displayed
-                                    additional_messages.append({"body": "...", "actions": show_actions[index:]})
+                                    additional_messages.append({"body": ["..."], "actions": show_actions[index:]})
                                 else:  # no title shown yet - include title
                                     additional_messages.append({"body": show_title, "actions": show_actions[index:]})
-                        print("*: ", additional_messages)  # ***
 
                     else:  # DEFAULT card type
                         button = {
