@@ -1,6 +1,7 @@
 import os
 import json
 import activity
+import time
 from tornado import ioloop, web
 from datetime import datetime
 from authentication import Authentication
@@ -42,10 +43,10 @@ class MainHandler(web.RequestHandler):
         service_url = post_body.get("serviceUrl", None)
         channel_id = post_body.get("channelId", None)
         status = authenticator.authenticateIncomingMessage(auth_header, service_url, channel_id)  # authenticate req
-        response_header = {"Content-type": "application/json"}
-        for header, value in response_header.items():  # iterate through & set response headers
-            print("Head = {}. Value = {}.".format(header, value))
-            self.set_header(header, value)
+        while status == 000:  # immature token
+            time.sleep(0.05)  # brief delay before attempting to decode token again
+            status = authenticator.authenticateIncomingMessage(auth_header, service_url, channel_id)
+        self.set_header("Content-type", "application/json")
         if status != 200:  # authentication was UNSUCCESSFUL - terminate function
             print("Authorization failed")
             self.set_status(status, "Access Denied")  # return status code

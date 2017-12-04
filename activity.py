@@ -59,16 +59,17 @@ class Activity():
                         elif "category" in received_value:  # user selected a CATEGORY (specialty)
                             cat = received_value['category']  # get the selected category name
                             ccs_for_cat = Patient.getChiefComplaintsForCategory(cat)  # get CCs for specified category
+                            abbrev_cat = ""  # abbreviation to display in button title
                             if cat.lower() == "internal medicine":  # map -> abbreviation so name displays fully
-                                cat = "IM"
+                                abbrev_cat = "IM"
                             elif cat.lower() == "family medicine":
-                                cat = "FM"
+                                abbrev_cat = "FM"
                             elif cat.lower() == "psychiatry":
-                                cat = "Psych"
+                                abbrev_cat = "Psych"
                             elif cat.lower() == "neurology":
-                                cat = "Neuro"
+                                abbrev_cat = "Neuro"
                             elif cat.lower() == "pediatrics":
-                                cat = "Peds"
+                                abbrev_cat = "Peds"
                             show_actions = [self.createAction(cc.title(), option_key="intro_2",
                                                                   option_value={"id": str(_id)})
                                             for cc, _id in ccs_for_cat]  # create show card actions
@@ -76,7 +77,7 @@ class Activity():
                                 self.createTextBlock("Which do you prefer?")
                             ]
                             actions = [
-                                self.createAction("Random {} case".format(cat), option_key="intro_2",
+                                self.createAction("Random {} case".format(abbrev_cat), option_key="intro_2",
                                                   option_value={"option": 0, "category": cat}),
                                 self.createAction("Choose by chief complaint", type=1,
                                                   body=[self.createTextBlock("Select a chief complaint:")],
@@ -333,7 +334,7 @@ class Activity():
 
         # Issues-
         # immature JWT keeps happening! maybe if this error is found, pause & then re-decode?
-        # error when selecting random patient for IM (empty randrange error)
+        # for truncated card bodies, need to send remainder of card somewhere...
 
         print("\n[Additional]: ", additional_messages)
         for msg in additional_messages:  # send all additional messages AFTER main message

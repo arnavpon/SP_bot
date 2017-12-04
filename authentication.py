@@ -57,6 +57,9 @@ class Authentication:
                                algorithms=self.__signing_algorithm,
                                audience=self.__microsoft_app_id,
                                issuer=connector_iss)  # (6) decodes token & VERIFIES JWT signature/audience/issuer
+        except jwt.ImmatureSignatureError:  # signature is NOT YET valid
+            print("JWT is still immature, passing through jwt.decode again...")
+            return 000  # special internal code to indicate immature JWT
         except jwt.InvalidIssuerError:  # (3) validate that the ISSUER is valid (handled by jwt automatically)
             print("Error - the JWT ISSUER is invalid!")
             return 403
