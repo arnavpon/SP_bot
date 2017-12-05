@@ -14,24 +14,25 @@ authenticator = Authentication()  # initialize authentication object
 class MainHandler(web.RequestHandler):
     def get(self, *args, **kwargs):  # incoming GET request (test)
         print("\nParsing GET request...")
-        from pymongo import MongoClient
-        client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
-        db = client.patients  # specify the DATABASE to access (patients)
 
         # Erase any conversation in the server cache older than 24 hours:
+        global CONVERSATIONS
+        print(CONVERSATIONS)  # ***
         expiration = datetime.now() - timedelta(minutes=1)  # amend to 24 hours after testing ***
         self.write("Current time = {}<br>".format(datetime.now()))
         self.write("Expiration threshold = {}<br>".format(expiration))
+        to_delete = list()  # list of conversations to remove
         for conversation, logs in CONVERSATIONS.items():
             print("Conversation: {}".format(conversation))
             if 'timestamp' in logs:  # access timestamp
                 print("Timestamp: {}".format(logs['timestamp']))
                 if logs['timestamp'] < expiration:  # timestamp is more than 24 hours old
-                    print("conversation has expired! deleting...")
-                    del(CONVERSATIONS[conversation])  # remove item from conversations cache
-        client.close()
-
-        # will log survive when we push next?
+                    print("conversation has expired!")
+                    to_delete.append(conversation)
+        for conversation in to_delete:  # delete all marked conversations
+            self.write("Deleted conversation {}<br>".format(conversation))
+            del(CONVERSATIONS[conversation])
+        print(CONVERSATIONS)  # ***
 
     def post(self, *args, **kwargs):  # incoming POST request
         print("\n[{}] Received POST Request from client...".format(datetime.now()))
