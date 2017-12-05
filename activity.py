@@ -136,7 +136,7 @@ class Activity():
         self.sendTextMessage(text="*You can now begin taking the history.*\n\n"
                                   "- Type **RESTART** at any time to start a new encounter.\n"
                                   "- Type **END ENCOUNTER** when you're ready to end the interview & get your score.\n"
-                                  "- Type **ERROR**: followed by a message to report an issue.")
+                                  "- Type **ERROR:** followed by a message to report an issue.")
 
     # --- ADAPTIVE CARD ELEMENTS ---
     def createButton(cls, type=0, title="", value=""):  # creates a BUTTON for HERO card attachment
