@@ -3,7 +3,7 @@ import json
 import activity
 import time
 from tornado import ioloop, web
-from datetime import datetime
+from datetime import datetime, timedelta
 from authentication import Authentication
 
 ip = os.environ.get("SP_BOT_SERVICE_HOST", None)  # access OpenShift environment host IP
@@ -17,17 +17,27 @@ class MainHandler(web.RequestHandler):
         from pymongo import MongoClient
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
         db = client.patients  # specify the DATABASE to access (patients)
-        collections = db.collection_names()
+
+        collections = db.collection_names()  # *** delete this stuff after clearing DB
         for name in collections:
             if name == "conversations":
                 self.write("{}:<br>".format(name.upper()))
                 for r in db[name].find():  # display active conversations
                     self.write("   {}<br>".format(r))
-                # result = db.conversations.delete_many({})  # delete all conversations - **will remove FEEDBACK too!**
-                # self.write("Deleted {} conversations...".format(result.deleted_count))
-                global CONVERSATIONS
-                CONVERSATIONS = dict()  # remove cached list of existing conversations (for reset)
-                self.write("<br>[Server] CONVERSATION cache has been cleared...")
+                result = db.conversations.delete_many({})  # delete all conversations
+                self.write("Deleted {} conversations...".format(result.deleted_count))
+
+        # Erase any conversation (DB item + server cache) older than 24 hours:
+        expiration = datetime.now() - timedelta(minutes=1)  # amend to 24 hours after testing ***
+        self.write("Expiration threshold = {}".format(expiration))
+        for conversation, logs in CONVERSATIONS.items():
+            if 'timestamp' in logs:  # access timestamp
+                print("Timestamp: {}".format(logs['timestamp']))
+                if logs['timestamp'] < expiration:  # timestamp is more than 24 hours old
+                    print("conversation has expired! deleting...")
+                    del(CONVERSATIONS[conversation])  # remove item from conversations cache
+                    result = db.conversations.delete_one({'conversation': conversation})
+                    self.write("Deleted {} conversations from DB.".format(result.deleted_count))
         client.close()
 
     def post(self, *args, **kwargs):  # incoming POST request
@@ -69,10 +79,12 @@ class MainHandler(web.RequestHandler):
                 current_activity = activity.Activity(authenticator, post_body, position, patient)  # init Activity
                 CONVERSATIONS[conversation].update(position=activity.UPDATED_POSITION)  # update position
                 CONVERSATIONS[conversation].update(patient=current_activity.getPatient())  # cache patient if it exists
+                CONVERSATIONS[conversation].update(timestamp=datetime.now())  # log current time of interaction
         else:  # initialization flow
             current_activity = activity.Activity(authenticator, post_body, position, patient)  # init Activity
             CONVERSATIONS[conversation].update(position=activity.UPDATED_POSITION)  # update position
             CONVERSATIONS[conversation].update(patient=current_activity.getPatient())  # cache patient if it exists
+            CONVERSATIONS[conversation].update(timestamp=datetime.now())  # log current time of interaction
 
 
 if __name__ == '__main__':

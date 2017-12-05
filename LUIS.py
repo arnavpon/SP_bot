@@ -102,7 +102,7 @@ class LUIS:
 
     def handle_response(self, response):  # CALLBACK method for the asynchronous web request
         print("\n[callback] Received response from LUIS app:")
-        if (response.error):  # check for error
+        if response.error:  # check for error
             print("[Error] {}".format(response.error))
         else:  # successful web request - get intents & entities for user input
             json_data = json.loads(response.body.decode('utf-8'))  # get JSON dict from HTTP body
@@ -111,11 +111,20 @@ class LUIS:
             self.__entities = [Entity(e) for e in json_data.get('entities', [])]  # access each intent & wrap in class
             for i, intent in enumerate(self.__intents):
                 print("Intent #{}: '{}' | P = {}".format(i, intent.intent, intent.score))
-            for e in self.__entities:
-                print("Word [{}] is part of entity [{}] @ indices ({}, {}) w/ P={}".format(e.entity, e.type,
-                                                                                           e.startIndex,
-                                                                                           e.endIndex, e.score))
-            print("\nCLASSIFICATION => '{}'".format(self.__topIntent.intent))
+            # for e in self.__entities:
+            #     print("Word [{}] @ indices ({}, {}) is part of entity [{}] w/ P={}".format(e.entity, e.startIndex,
+            #                                                                                e.endIndex,
+            #                                                                                e.type, e.score))
+            # print("\nCLASSIFICATION => '{}'".format(self.__topIntent.intent))
+
+            with open('./logs/{}.txt'.format(self.__activity.getConversationID()), 'a') as f:  # log data
+                f.write("'{}' | ".format(self.__query))  # log query
+                f.write("'{}', P={} | ".format(self.__topIntent.intent, self.__topIntent.score))  # log top intent
+                for i, e in enumerate(self.__entities):  # log entities
+                    f.write("'{}' @ ({}, {}) => [{}]".format(e.entity, e.startIndex, e.endIndex, e.type))
+                    if i != len(self.__entities) - 1:  # NOT the last entity
+                        f.write("; ")  # spacer
+                f.write("\n")  # each line represents 1 query
             self.renderResponseForQuery()
 
     def renderResponseForQuery(self):  # constructs a response based on the user's query intent
@@ -140,21 +149,13 @@ class LUIS:
         # Could remove all conversations when server stops, but server will constantly run so this isn't great
         #     - best bet is to delete conversation when SESSION is closed. How can server recognize that?
         #     - may need to create a SESSION on the server, get signal when session is terminated...
-        #     - be careful not to remove the logged feedback, only the conversation!
-        #     - feedback is logged to the convo collection, so if feedback is present when session closes...
 
         # Objectives (V 1.0)
         # - 2) Determine how to CONNECT bot to the Facebook messenger channel (done via My Bots page)
         #      - refer to FB messenger documentation:
         #      - 1) Modify bot to comply w/ FB guidelines, need privacyURL (lookup?)
         #      - 2) Submit fully compliant bot -> FB for publishing (can test as admin/tester/dev w/o publish!)
-        #      - 4) How do we refresh from inside FB messenger to start new conversation?!?
-        #           deleting convo & restarting picks up from previous point, which we DO NOT want
-        #           no conversation update is provided by either framework
-
-        # - 4) Launch & market!  BEFORE launch, modify the responses we send to user (remove Intent at beginning)
-        #      - add an ERROR-reporting system (type in err: "description of error") <- recognize before pass -> LUIS
-        #      - log all queries, intents, & responses rendered to server so we can parse & improve
+        # - 4) Launch & market!
 
         # Improving Recognition Model:
         # - product similar to LUIS except you can manually control what factors the model takes into account
@@ -305,7 +306,7 @@ class LUIS:
 
         # (LAST) Persist the scope object & then render the bot's response:
         self.__patient.persistCurrentScope(self.__activity.getConversationID(), self.__scope.getScopeForDB())
-        self.__activity.sendTextMessage(text="[{}] '{}'".format(self.__topIntent.intent, self.__response))  # send msg
+        self.__activity.sendTextMessage(text="{}".format(self.__response))  # send msg
 
     # --- <CROSS-ELEMENT> INTENT HANDLERS ---
     def handleGetAgeIntent(self, query_word):  # "GET_AGE" intent

@@ -41,6 +41,11 @@ class Activity():
                         UPDATED_POSITION = feedback_handler.getPosition()  # NEGATIVE position => encounter was CLOSED
                     elif received_text.strip().upper() == "RESTART":  # restart from scratch
                         self.initializeBot()  # start bot at position 0 again
+                    elif re.match(r'^ERROR', received_text.strip().upper()):  # ERROR reporting
+                        issue = received_text.strip()[5:]  # grab the issue
+                        with open('./logs/{}.txt'.format(self.__conversation_id), 'a') as f:  # log error in file
+                            f.write("[ERROR] {}\n".format(issue))
+                        self.sendTextMessage(text="Issue has been reported. Thank you!")
                     else:  # question for the bot
                         _ = LUIS(received_text, self)  # pass the user's input -> a LUIS object
 
@@ -129,9 +134,10 @@ class Activity():
                                                                  self.__patient.age[1],
                                                                  self.__patient.gender,
                                                                  self.__patient.chief_complaint))
-        self.sendTextMessage(text="*You can now begin taking a history.*")
-        self.sendTextMessage(text="Type **RESTART** to reset the encounter at any time. "
-                                  "Type **END ENCOUNTER** when you're ready to end the interview & get your score.")
+        self.sendTextMessage(text="*You can now begin taking the history.*\n\n"
+                                  "- Type **RESTART** at any time to start a new encounter.\n"
+                                  "- Type **END ENCOUNTER** when you're ready to end the interview & get your score.\n"
+                                  "- Type **ERROR: ** followed by a message to report an issue.")
 
     # --- ADAPTIVE CARD ELEMENTS ---
     def createButton(cls, type=0, title="", value=""):  # creates a BUTTON for HERO card attachment

@@ -473,14 +473,22 @@ class Patient:  # a model for the SP that houses all historical information
 
     def logFeedback(self, conversation, user_input):  # stores user feedback for the converation
         print("Logging feedback for conversation [{}]...".format(conversation))
-        record = db.conversations.find_one({"conversation": conversation})
-        if record:
-            self.removeScope(record)  # remove scope info
-            feedback = record.get("feedback", "")  # grab existing feedback
-            if feedback != "":  # feedback exists!
-                feedback += " | "  # add separator
-            feedback += user_input  # append new feedback to existing text
-            db.conversations.update_one(record, {"$set": {"feedback": feedback}})  # store -> DB
+        with open('./logs/{}.txt'.format(conversation), 'a') as f:  # log feedback in file
+            f.write("[FEEDBACK] {} | ".format(user_input))
+
+        record = db.conversations.find_one({"conversation": conversation})  # delete conversation record
+        if record:  # *** test that refreshing at this point works correctly!!!
+            result = db.conversations.delete_one(record)  # remove conversation  *** <- test
+            print("Deleted {} record from 'conversations' collection!".format(result.deleted_count))
+
+        # record = db.conversations.find_one({"conversation": conversation})
+        # if record:
+        #     self.removeScope(record)  # remove scope info
+        #     feedback = record.get("feedback", "")  # grab existing feedback
+        #     if feedback != "":  # feedback exists!
+        #         feedback += " | "  # add separator
+        #     feedback += user_input  # append new feedback to existing text
+        #     db.conversations.update_one(record, {"$set": {"feedback": feedback}})  # store -> DB
 
     def cacheQueryForClarification(self, conversation, top_intent, entities):  # clarification SAVE logic
         # Store a COMPLETE representation of the topIntent + all entities:
