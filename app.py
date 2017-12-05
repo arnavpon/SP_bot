@@ -23,6 +23,7 @@ class MainHandler(web.RequestHandler):
         self.write("Current time = {}<br>".format(datetime.now()))
         self.write("Expiration threshold = {}<br>".format(expiration))
         for conversation, logs in CONVERSATIONS.items():
+            print("Conversation: {}".format(conversation))
             if 'timestamp' in logs:  # access timestamp
                 print("Timestamp: {}".format(logs['timestamp']))
                 if logs['timestamp'] < expiration:  # timestamp is more than 24 hours old
