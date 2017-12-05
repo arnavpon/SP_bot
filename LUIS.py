@@ -117,18 +117,8 @@ class LUIS:
             #                                                                                e.type, e.score))
             # print("\nCLASSIFICATION => '{}'".format(self.__topIntent.intent))
 
-            try:
-                f = open('./logs/{}.txt'.format(self.__activity.getConversationID()), 'a')
-            except:  # file doesn't exist yet
-                f = open('./logs/{}.txt'.format(self.__activity.getConversationID()), 'w')
-            f.write("'{}' | ".format(self.__query))  # log query
-            f.write("'{}', P={} | ".format(self.__topIntent.intent, self.__topIntent.score))  # log top intent
-            for i, e in enumerate(self.__entities):  # log entities
-                f.write("'{}' @ ({}, {}) => [{}]".format(e.entity, e.startIndex, e.endIndex, e.type))
-                if i != len(self.__entities) - 1:  # NOT the last entity
-                    f.write("; ")  # spacer
-            f.write("\n")  # each line represents 1 query
-            f.close()  # close file after write operation is complete
+            self.__patient.logQueryData(self.__activity.getConversationID(), self.__query,
+                                        self.__topIntent, self.__entities)  # log query -> DB
             self.renderResponseForQuery()
 
     def renderResponseForQuery(self):  # constructs a response based on the user's query intent
@@ -148,11 +138,6 @@ class LUIS:
 
         e = self.findMatchingEntity("query")  # *(4) check for a QUERY entity AFTER the clarification!*
         query_word = e[0] if len(e) > 0 else ""  # store FIRST query that is found (b/c entities are sent IN ORDER)
-
-        # How do we clean up the 'conversations' DB once the conversation is over?
-        # Could remove all conversations when server stops, but server will constantly run so this isn't great
-        #     - best bet is to delete conversation when SESSION is closed. How can server recognize that?
-        #     - may need to create a SESSION on the server, get signal when session is terminated...
 
         # Objectives (V 1.0)
         # - 2) Determine how to CONNECT bot to the Facebook messenger channel (done via My Bots page)

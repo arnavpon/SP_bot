@@ -471,24 +471,38 @@ class Patient:  # a model for the SP that houses all historical information
         db.conversations.update_one(record, {"$unset": {"scope": None}})  # remove the 'scope' value
         print("Closed scope for conversation [{}]...".format(record["conversation"]))
 
+    def initializeConversationRecord(self, conversation):  # creates conversation record in DB if it doesn't exist
+        record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
+        if record is None:  # conversation does NOT already exist
+            db.conversations.insert_one({"conversation": conversation})  # insert record
+
+    def logError(self, conversation, error):  # stores any errors
+        self.initializeConversationRecord(conversation)
+        db.conversations.update_one(
+            {'conversation': conversation},
+            {'$push': {'queries': error}}
+        )  # add error as its own entry in the array
+
+    def logQueryData(self, conversation, query, top_intent, entities):  # stores all queries made by user
+        self.initializeConversationRecord(conversation)
+        line = ""  # initialize line
+        line += "'{}' | ".format(query)  # add query
+        line += "'{}', P={} | ".format(top_intent.intent, top_intent.score)  # add top intent
+        for i, e in enumerate(entities):  # log entities
+            line += "'{}' @ ({}, {}) => [{}]".format(e.entity, e.startIndex, e.endIndex, e.type)
+            if i != len(entities) - 1:  # NOT the last entity
+                line += "; "  # spacer
+        db.conversations.update_one(
+            {'conversation': conversation},
+            {'$push': {'queries': line}}
+        )  # add each query as its own entry in the array
+
     def logFeedback(self, conversation, user_input):  # stores user feedback for the converation
-        print("Logging feedback for conversation [{}]...".format(conversation))
-        with open('./logs/{}.txt'.format(conversation), 'a') as f:  # log feedback in file
-            f.write("[FEEDBACK] {} | ".format(user_input))
-
-        record = db.conversations.find_one({"conversation": conversation})  # delete conversation record
-        if record:  # *** test that refreshing at this point works correctly!!!
-            result = db.conversations.delete_one(record)  # remove conversation  *** <- test
-            print("Deleted {} record from 'conversations' collection!".format(result.deleted_count))
-
-        # record = db.conversations.find_one({"conversation": conversation})
-        # if record:
-        #     self.removeScope(record)  # remove scope info
-        #     feedback = record.get("feedback", "")  # grab existing feedback
-        #     if feedback != "":  # feedback exists!
-        #         feedback += " | "  # add separator
-        #     feedback += user_input  # append new feedback to existing text
-        #     db.conversations.update_one(record, {"$set": {"feedback": feedback}})  # store -> DB
+        self.initializeConversationRecord(conversation)
+        db.conversations.update_one(
+            {'conversation': conversation},
+            {'$push': {'feedback': user_input}}
+        )
 
     def cacheQueryForClarification(self, conversation, top_intent, entities):  # clarification SAVE logic
         # Store a COMPLETE representation of the topIntent + all entities:
@@ -496,7 +510,7 @@ class Patient:  # a model for the SP that houses all historical information
         entities = [{"entity": e.entity, "type": e.type,
                      "startIndex": e.startIndex, "endIndex": e.endIndex, "score": e.score} for e in entities]
         record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
-        if (record):  # conversation ALREADY exists
+        if record:  # conversation ALREADY exists
             db.conversations.update_one(record, {"$set": {"clarification": [intent, entities]}})  # add clarification
         else:  # conversation does NOT already exist - insert new record
             db.conversations.insert_one({"conversation": conversation,
@@ -505,7 +519,7 @@ class Patient:  # a model for the SP that houses all historical information
     def getCacheForClarification(self, conversation):  # clarification FETCH logic
         from copy import deepcopy
         record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
-        if (record):  # conversation ALREADY exists
+        if record:  # conversation ALREADY exists
             data = deepcopy(record.get("clarification", None))  # get a copy of the data
             db.conversations.update_one(record, {"$unset": {"clarification": None}})  # *REMOVE clarification!*
             return data  # pass back the topScoring intent + all entities (2 element list)

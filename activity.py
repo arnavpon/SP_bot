@@ -43,12 +43,7 @@ class Activity():
                         self.initializeBot()  # start bot at position 0 again
                     elif re.match(r'^ERROR', received_text.strip().upper()):  # ERROR reporting
                         issue = received_text.strip()[5:]  # grab the issue
-                        try:
-                            with open('./logs/{}.txt'.format(self.__conversation_id), 'a') as f:  # log error in file
-                                f.write("[ERROR] {}\n".format(issue))
-                        except:  # file doesn't exist yet
-                            with open('./logs/{}.txt'.format(self.__conversation_id), 'w') as f:  # log error in file
-                                f.write("[ERROR] {}\n".format(issue))
+                        self.__patient.logError(self.__conversation_id, issue)  # log error -> DB
                         self.sendTextMessage(text="Issue has been reported. Thank you!")
                     else:  # question for the bot
                         _ = LUIS(received_text, self)  # pass the user's input -> a LUIS object

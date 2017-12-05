@@ -18,7 +18,7 @@ class MainHandler(web.RequestHandler):
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
         db = client.patients  # specify the DATABASE to access (patients)
 
-        # Erase any conversation (DB item + server cache) older than 24 hours:
+        # Erase any conversation in the server cache older than 24 hours:
         expiration = datetime.now() - timedelta(minutes=1)  # amend to 24 hours after testing ***
         self.write("Current time = {}<br>".format(datetime.now()))
         self.write("Expiration threshold = {}<br>".format(expiration))
@@ -29,9 +29,9 @@ class MainHandler(web.RequestHandler):
                 if logs['timestamp'] < expiration:  # timestamp is more than 24 hours old
                     print("conversation has expired! deleting...")
                     del(CONVERSATIONS[conversation])  # remove item from conversations cache
-                    result = db.conversations.delete_one({'conversation': conversation})
-                    self.write("Deleted {} conversations from DB.".format(result.deleted_count))
         client.close()
+
+        # will log survive when we push next?
 
     def post(self, *args, **kwargs):  # incoming POST request
         print("\n[{}] Received POST Request from client...".format(datetime.now()))
