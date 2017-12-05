@@ -18,18 +18,10 @@ class MainHandler(web.RequestHandler):
         client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB
         db = client.patients  # specify the DATABASE to access (patients)
 
-        collections = db.collection_names()  # *** delete this stuff after clearing DB
-        for name in collections:
-            if name == "conversations":
-                self.write("{}:<br>".format(name.upper()))
-                for r in db[name].find():  # display active conversations
-                    self.write("   {}<br>".format(r))
-                result = db.conversations.delete_many({})  # delete all conversations
-                self.write("Deleted {} conversations...".format(result.deleted_count))
-
         # Erase any conversation (DB item + server cache) older than 24 hours:
         expiration = datetime.now() - timedelta(minutes=1)  # amend to 24 hours after testing ***
-        self.write("Expiration threshold = {}".format(expiration))
+        self.write("Current time = {}<br>".format(datetime.now()))
+        self.write("Expiration threshold = {}<br>".format(expiration))
         for conversation, logs in CONVERSATIONS.items():
             if 'timestamp' in logs:  # access timestamp
                 print("Timestamp: {}".format(logs['timestamp']))

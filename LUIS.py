@@ -117,14 +117,18 @@ class LUIS:
             #                                                                                e.type, e.score))
             # print("\nCLASSIFICATION => '{}'".format(self.__topIntent.intent))
 
-            with open('./logs/{}.txt'.format(self.__activity.getConversationID()), 'a') as f:  # log data
-                f.write("'{}' | ".format(self.__query))  # log query
-                f.write("'{}', P={} | ".format(self.__topIntent.intent, self.__topIntent.score))  # log top intent
-                for i, e in enumerate(self.__entities):  # log entities
-                    f.write("'{}' @ ({}, {}) => [{}]".format(e.entity, e.startIndex, e.endIndex, e.type))
-                    if i != len(self.__entities) - 1:  # NOT the last entity
-                        f.write("; ")  # spacer
-                f.write("\n")  # each line represents 1 query
+            try:
+                f = open('./logs/{}.txt'.format(self.__activity.getConversationID()), 'a')
+            except:  # file doesn't exist yet
+                f = open('./logs/{}.txt'.format(self.__activity.getConversationID()), 'w')
+            f.write("'{}' | ".format(self.__query))  # log query
+            f.write("'{}', P={} | ".format(self.__topIntent.intent, self.__topIntent.score))  # log top intent
+            for i, e in enumerate(self.__entities):  # log entities
+                f.write("'{}' @ ({}, {}) => [{}]".format(e.entity, e.startIndex, e.endIndex, e.type))
+                if i != len(self.__entities) - 1:  # NOT the last entity
+                    f.write("; ")  # spacer
+            f.write("\n")  # each line represents 1 query
+            f.close()  # close file after write operation is complete
             self.renderResponseForQuery()
 
     def renderResponseForQuery(self):  # constructs a response based on the user's query intent
