@@ -329,7 +329,7 @@ class Activity():
 
                 formatted_buttons = list()  # format button data appropriate to context
                 for i, (btn_title, btn_payload) in enumerate(buttons):
-                    if len(actions) <= 3:  # less than 3 buttons required - use Button Template (LIMIT 3 options!)
+                    if len(buttons) <= 3:  # less than 3 buttons required - use Button Template (LIMIT 3 options!)
                         button = {
                             "type": "postback",
                             "title": btn_title,
