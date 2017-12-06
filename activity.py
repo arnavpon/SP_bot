@@ -322,7 +322,8 @@ class Activity():
                         #             additional_messages.append({"body": empty_title, "actions": show_actions[index:]})
                         #         else:  # no title shown yet - include title
                         #             additional_messages.append({"body": show_title, "actions": show_actions[index:]})
-                    #     additional_messages.append({"body": show_title, "actions": show_actions})
+                        # additional_messages.append({"body": show_title, "actions": show_actions})
+
                     else:  # DEFAULT card type
                         buttons.append((action['title'], json.dumps(action['data'])))  # append tuple
 
@@ -371,9 +372,9 @@ class Activity():
                     }
                 }]
                 message_shell.update(attachments=attachment)  # update shell w/ attachments
-
         pprint(message_shell)
-        # self.deliverMessage(return_url, head, message_shell)  # send main message
+        self.deliverMessage(return_url, head, message_shell)  # send main message
+
         # for msg in additional_messages:  # send all additional messages AFTER main message
         #     print("Delivering additional message [{}]...".format(msg))
         #     if "text" in msg:  # TEXT message
