@@ -61,18 +61,21 @@ class MainHandler(web.RequestHandler):
         position = CONVERSATIONS[conversation].get("position")  # check current position in flow
         print("Current position in conversation = [{}]".format(position))
         patient = CONVERSATIONS[conversation].get("patient", None)  # get patient object to pass -> Activity
+        user = CONVERSATIONS[conversation].get("user", None)  # get user to pass -> Activity
         if (patient) and (post_body.get("text", None) is not None):  # patient exists AND incoming msg is TEXT
             print("Blocker Set? {}".format(patient.isBlocked(conversation)))
             if not patient.isBlocked(conversation):  # blocker is NOT set - pass activity through
                 patient.setBlock(conversation)  # set blocker BEFORE initializing the new activity
-                current_activity = activity.Activity(authenticator, post_body, position, patient)  # init Activity
+                current_activity = activity.Activity(authenticator, post_body, position, user, patient)  # init Activity
                 CONVERSATIONS[conversation].update(position=activity.UPDATED_POSITION)  # update position
                 CONVERSATIONS[conversation].update(patient=current_activity.getPatient())  # cache patient if it exists
+                CONVERSATIONS[conversation].update(user=current_activity.getUserName())  # cache user if exists
                 CONVERSATIONS[conversation].update(timestamp=datetime.now())  # log current time of interaction
         else:  # initialization flow
-            current_activity = activity.Activity(authenticator, post_body, position, patient)  # init Activity
+            current_activity = activity.Activity(authenticator, post_body, position, user, patient)  # init Activity
             CONVERSATIONS[conversation].update(position=activity.UPDATED_POSITION)  # update position
             CONVERSATIONS[conversation].update(patient=current_activity.getPatient())  # cache patient if it exists
+            CONVERSATIONS[conversation].update(user=current_activity.getUserName())  # cache user if exists
             CONVERSATIONS[conversation].update(timestamp=datetime.now())  # log current time of interaction
 
 

@@ -14,9 +14,14 @@ UPDATED_POSITION = None  # indicator used to prevent backwards actions in conver
 
 class Activity():
 
+    PSID = "613112555746530"  # Facebook page ID
+    PAGE_ACCESS_TOKEN = "EAAD7sZBOYsK4BAJt95X17v6ZCstfHi3UgUkJZCcetgVEJpH6tFN5Ju3zQ2CTXJ" \
+                        "M35o8gteO17Ixk5N96gQxUIJug5IsjSozCEogiuqgKQEfWGMf9HlIABFyC7wC4cRkugwaLssad" \
+                        "9AVuPFXkw6muELn9jljXmL964bqvZCvioQZDZD"  # token to access FB page
+
     # --- INITIALIZERS ---
-    def __init__(self, authenticator, post_body, position, patient=None):  # initializer
-        print("\nInitializing ACTIVITY object w/ JSON data:")
+    def __init__(self, authenticator, post_body, position, user, patient):  # initializer
+        print("\nInitializing ACTIVITY object for user {} w/ JSON data:".format(user))  # ***
         pprint(post_body)  # output JSON from bot client
         self.__authenticator = authenticator  # store the <Authentication> object
         self.__postBody = post_body  # store the POST data
@@ -24,6 +29,7 @@ class Activity():
         self.__channel_id = post_body.get("channelId", None)  # channel the user is accessing bot with
         self.__patient = patient  # initialize <Patient> object w/ passed-in argument
         self.__action_required = False  # indicator that outgoing message will contain an ACTION
+        self.__user_name = user  # name of user (used for personalization)
         global UPDATED_POSITION  # indicator that is referenced by the server to keep track of current flow position
 
         if position < 0:  # indicator that interaction is closed & user is receiving FEEDBACK
@@ -33,8 +39,15 @@ class Activity():
             self.initializeBot()
         else:  # get the activity type, use it to handle what methods are performed
             self.activityType = post_body['type']
+            quick_reply = None  # for Facebook quick reply data
+            if 'channelData' in self.__postBody:  # make sure quick reply exists
+                if 'message' in self.__postBody['channelData']:
+                    if 'quick_reply' in self.__postBody['channelData']['message']:
+                        if 'payload' in self.__postBody['channelData']['message']['quick_reply']:
+                            quick_reply = self.__postBody['channelData']['message']['quick_reply']['payload']
+
             if self.activityType == "message":  # POST a response to the message to the designated URL
-                if self.__postBody.get('text', None) and (self.__patient is not None):  # user sent TEXT message
+                if ("text" in self.__postBody) and (self.__patient is not None):  # user sent TEXT message
                     received_text = self.__postBody.get('text')
                     if received_text.strip().upper() == "END ENCOUNTER":  # close the encounter
                         feedback_handler = FeedbackModule(self, 0)  # init Feedback Module object to handle next step
@@ -48,8 +61,8 @@ class Activity():
                     else:  # question for the bot
                         _ = LUIS(received_text, self)  # pass the user's input -> a LUIS object
 
-                elif self.__postBody.get("value", None) is not None:  # user selected a card (from initial sequence)
-                    received_value = self.__postBody.get('value')  # obtain the option number that was sel
+                elif ("value" in self.__postBody) or (quick_reply is not None):  # card chosen from initial sequence
+                    received_value = self.__postBody.get('value') if quick_reply is None else quick_reply  # selection
                     if type(received_value) is str:  # FB messenger passes data as JSON (not as a dict!)
                         received_value = json.loads(received_value)  # convert JSON -> dict
 
@@ -111,8 +124,9 @@ class Activity():
             self.createAction(cat.title(), option_key='intro_1', option_value={"category": cat})
             for cat in categories]  # set the selection option -> the category name
 
+        welcome = "Welcome to the Interview Bot" + " {}".format(self.__user_name[0]) if self.__user_name else "!"
         body = [
-            self.createTextBlock("Welcome to the Interview Bot!", size="large", weight="bolder"),
+            self.createTextBlock(welcome, size="large", weight="bolder"),
             self.createTextBlock("Please select an option to get started:")
         ]
         actions = [
@@ -125,6 +139,20 @@ class Activity():
         
         global UPDATED_POSITION
         UPDATED_POSITION = 1  # update the position to prevent out-of-flow actions
+
+    def getUserProfile(self):  # accesses user's name
+        if self.__channel_id == "facebook":
+            profile_request = requests.get("https://graph.facebook.com/v2.6/{}?"
+                                           "fields=first_name,last_name"
+                                           "&access_token={}".format(Activity.PSID, Activity.PAGE_ACCESS_TOKEN))
+            print("\nSent user profile request with code {}".format(profile_request.status_code))
+            if profile_request.status_code == 200:  # successful request
+                response = profile_request.json()
+                print(response)
+                if ("first_name" in response) and ("last_name" in response):  # safety check
+                    first_name, last_name = response['first_name'], response['last_name']
+                    print("First: {}, Last: {}".format(first_name, last_name))
+                    self.__user_name = first_name, last_name  # store to self property
 
     def renderIntroductoryMessage(self):  # send message that introduces patient & BEGINS the encounter
         self.sendTextMessage(text="1. Type **RESTART** at any time to start a new encounter.\n"
@@ -182,10 +210,7 @@ class Activity():
 
     def getResponseURL(self):  # uses info in POST body to construct URL to send response to
         if self.routeDirectToFacebook():  # Facebook messenger channel
-            access_token = "EAAD7sZBOYsK4BAJt95X17v6ZCstfHi3UgUkJZCcetgVEJpH6tFN5Ju3zQ2CTXJ" \
-                           "M35o8gteO17Ixk5N96gQxUIJug5IsjSozCEogiuqgKQEfWGMf9HlIABFyC7wC4cRkugwaLssad" \
-                           "9AVuPFXkw6muELn9jljXmL964bqvZCvioQZDZD"  # token to access SP Bot FB page
-            return "https://graph.facebook.com/v2.6/me/messages?access_token={}".format(access_token)
+            return "https://graph.facebook.com/v2.6/me/messages?access_token={}".format(Activity.PAGE_ACCESS_TOKEN)
         else:  # all other channels
             serviceURL = self.__postBody['serviceUrl']  # get base URL to return response to
             activityID = self.__postBody['id']  # get the activityID (needed to construct URL)
@@ -276,6 +301,9 @@ class Activity():
         additional_messages = list()  # list of additional messages after first to send
         if len(actions) > 0:  # make sure there is at least 1 action before creating attachment
             if self.routeDirectToFacebook():  # construct Facebook-specific card
+                count = len([action for action in actions if action['type'] != "Action.ShowCard"])
+                print("[AdaptiveCard] Count = {}".format(count))
+
                 card_title = ""  # init as empty string
                 for i, block in enumerate(body):  # body is LIST of text blocks - combine into single string
                     to_add = block['text']
@@ -304,34 +332,36 @@ class Activity():
                         #             additional_messages.append({"body": show_title, "actions": show_actions[index:]})
                         additional_messages.append({"body": show_title, "actions": show_actions})
                     else:  # DEFAULT card type
-                        button = {
-                            "type": "postback",
-                            "title": action['title'],
-                            "payload": json.dumps(action['data'])
-                        }  # payload MUST be <Str>, to send dict payload transmit as JSON (handled by BotFramework)
-                        button = {
-                            "content_type": "text",
-                            "title": action['title'],
-                            "payload": json.dumps(action['data'])
-                        }
+                        if count <= 3:  # less than 3 buttons required - use Button Template
+                            button = {
+                                "type": "postback",
+                                "title": action['title'],
+                                "payload": json.dumps(action['data'])
+                            }  # payload MUST be <Str>, to send dict payload transmit as JSON (handled by BotFramework)
+                        else:  # more than 3 buttons required - use Quick Reply template
+                            button = {
+                                "content_type": "text",
+                                "title": action['title'],
+                                "payload": json.dumps(action['data'])
+                            }
                         buttons.append(button)  # add button to list
 
-                attachment = {
-                    "attachment": {
-                        "type": "template",
-                        "payload": {
-                            "template_type": "button",
-                            "text": card_title,
-                            "buttons": buttons
+                if count <= 3:  # Button Template
+                    attachment = {
+                        "attachment": {
+                            "type": "template",
+                            "payload": {
+                                "template_type": "button",
+                                "text": card_title,
+                                "buttons": buttons
+                            }
                         }
                     }
-                }
-
-                attachment = {
-                    "text": card_title,
-                    "quick_replies": buttons
-                }
-
+                else:  # Quick Replies template
+                    attachment = {
+                        "text": card_title,
+                        "quick_replies": buttons
+                    }
                 message_shell.update(message=attachment)  # update shell w/ attachments
 
             else:  # BotFramework message
@@ -369,6 +399,9 @@ class Activity():
 
     def getPatient(self):  # accessor method for patient
         return self.__patient
+
+    def getUserName(self):  # accessor method for patient
+        return self.__user_name
 
     def getPostData(self):  # accessor method for post data
         return self.__postBody

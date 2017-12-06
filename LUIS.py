@@ -142,6 +142,8 @@ class LUIS:
         # Objectives (V 1.0)
         # - 2) Determine how to CONNECT bot to the Facebook messenger channel (done via My Bots page)
         #      - refer to FB messenger documentation:
+        #       https://developers.facebook.com/docs/messenger-platform/app-review
+        #       https://developers.facebook.com/docs/messenger-platform/prelaunch-checklist
         #      - 1) Modify bot to comply w/ FB guidelines, need privacyURL (lookup?)
         #      - 2) Submit fully compliant bot -> FB for publishing (can test as admin/tester/dev w/o publish!)
         # - 4) Launch & market!
@@ -153,7 +155,8 @@ class LUIS:
 
         # Non-Historical Intents:
         if self.__topIntent.intent == "Greeting":
-            self.__response = "Hello"
+            name = self.__activity.getUserName()  # check if user's name is defined
+            self.__response = "Hello" + ", Dr. {}".format(name[1]) if name else ""
         elif self.__topIntent.intent == "GetName":  # asking for name
             self.__response = self.__patient.name
 

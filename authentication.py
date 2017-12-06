@@ -7,12 +7,6 @@ from jwt.algorithms import RSAAlgorithm
 from datetime import datetime, timedelta
 from pprint import pprint
 
-# use the 'endoresements' key property to verify the channelID in the Activity object is authentic
-# required for ALL published channels for the bot
-# if endorsement is required, ensure that any Activity sent TO your bot w/ that channelID has a JWT token
-# signed w/ an endorsement for that channel.
-# if endorsement is not present, your bot should reject the request  by returning HTTP 403
-
 class Authentication:
 
     # --- INSTANCE METHODS
