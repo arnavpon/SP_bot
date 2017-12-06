@@ -127,16 +127,15 @@ class Activity():
         UPDATED_POSITION = 1  # update the position to prevent out-of-flow actions
 
     def renderIntroductoryMessage(self):  # send message that introduces patient & BEGINS the encounter
-        self.sendTextMessage(text="Your patient is {}, a **{}** {}-old **{}** "
-                                  "complaining of **{}**".format(self.__patient.name,
+        self.sendTextMessage(text="1. Type **RESTART** at any time to start a new encounter.\n"
+                                  "2. Type **END ENCOUNTER** when you're ready to end the interview & get your score.\n"
+                                  "3. Type **ERROR:** followed by a message to report an issue.")
+        self.sendTextMessage(text="Your patient is {}, a **{}** {}-old **{}** complaining of **{}**.\n"
+                                  "*You can now begin taking the history.*".format(self.__patient.name,
                                                                  self.__patient.age[0],
                                                                  self.__patient.age[1],
                                                                  self.__patient.gender,
                                                                  self.__patient.chief_complaint))
-        self.sendTextMessage(text="*You can now begin taking the history.*\n\n"
-                                  "- Type **RESTART** at any time to start a new encounter.\n"
-                                  "- Type **END ENCOUNTER** when you're ready to end the interview & get your score.\n"
-                                  "- Type **ERROR:** followed by a message to report an issue.")
 
     # --- ADAPTIVE CARD ELEMENTS ---
     def createButton(cls, type=0, title="", value=""):  # creates a BUTTON for HERO card attachment

@@ -486,10 +486,11 @@ class Patient:  # a model for the SP that houses all historical information
     def logQueryData(self, conversation, query, intents, entities):
         # logs each user query/LUIS classification as tuple: (query, [(intent, probability)], [entities])
         self.initializeConversationRecord(conversation)
-        if len(intents) <= 5:  # less than 6 intents, store them ALL
+        limit = 3  # number of intents to store
+        if len(intents) <= limit:  # store ALL intents if less than threshold
             top_intents = intents[:]
-        else:  # more than 5 intents, store only the TOP 5  *** make sure they are sorted!
-            top_intents = intents[:5]
+        else:  # more intents than limit
+            top_intents = intents[:limit]  # store only the limit (in order from greatest to lowest probability)
         entry = (query, [(i.intent, i.score) for i in top_intents],
                  [(e.entity, e.type, e.startIndex, e.endIndex) for e in entities])
         db.conversations.update_one(
