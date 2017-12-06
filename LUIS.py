@@ -118,7 +118,7 @@ class LUIS:
             # print("\nCLASSIFICATION => '{}'".format(self.__topIntent.intent))
 
             self.__patient.logQueryData(self.__activity.getConversationID(), self.__query,
-                                        self.__topIntent, self.__entities)  # log query -> DB
+                                        self.__intents, self.__entities)  # log query -> DB
             self.renderResponseForQuery()
 
     def renderResponseForQuery(self):  # constructs a response based on the user's query intent

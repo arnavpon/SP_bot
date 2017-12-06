@@ -483,19 +483,19 @@ class Patient:  # a model for the SP that houses all historical information
             {'$push': {'queries': error}}
         )  # add error as its own entry in the array
 
-    def logQueryData(self, conversation, query, top_intent, entities):  # stores all queries made by user
+    def logQueryData(self, conversation, query, intents, entities):
+        # logs each user query/LUIS classification as tuple: (query, [(intent, probability)], [entities])
         self.initializeConversationRecord(conversation)
-        line = ""  # initialize line
-        line += "'{}' | ".format(query)  # add query
-        line += "'{}', P={} | ".format(top_intent.intent, top_intent.score)  # add top intent
-        for i, e in enumerate(entities):  # log entities
-            line += "'{}' @ ({}, {}) => [{}]".format(e.entity, e.startIndex, e.endIndex, e.type)
-            if i != len(entities) - 1:  # NOT the last entity
-                line += "; "  # spacer
+        if len(intents) <= 5:  # less than 6 intents, store them ALL
+            top_intents = intents[:]
+        else:  # more than 5 intents, store only the TOP 5  *** make sure they are sorted!
+            top_intents = intents[:5]
+        entry = (query, [(i.intent, i.score) for i in top_intents],
+                 [(e.entity, e.type, e.startIndex, e.endIndex) for e in entities])
         db.conversations.update_one(
             {'conversation': conversation},
-            {'$push': {'queries': line}}
-        )  # add each query as its own entry in the array
+            {'$push': {'queries': entry}}
+        )  # add each complete query record as its own entry in the array
 
     def logFeedback(self, conversation, user_input):  # stores user feedback for the converation
         self.initializeConversationRecord(conversation)
