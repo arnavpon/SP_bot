@@ -104,6 +104,7 @@ class LUIS:
         print("\n[callback] Received response from LUIS app:")
         if response.error:  # check for error
             print("[Error] {}".format(response.error))
+            self.__patient.removeBlock(self.__activity.getConversationID())  # remove block
         else:  # successful web request - get intents & entities for user input
             json_data = json.loads(response.body.decode('utf-8'))  # get JSON dict from HTTP body
             self.__topIntent = Intent(json_data.get('topScoringIntent', None))  # access the HIGHEST probability intent
@@ -119,7 +120,11 @@ class LUIS:
 
             self.__patient.logQueryData(self.__activity.getConversationID(), self.__query,
                                         self.__intents, self.__entities)  # log query -> DB
-            self.renderResponseForQuery()
+            try:  # wrap in try statement so we can still remove blocker after server error
+                self.renderResponseForQuery()
+            except Exception as e:  # remove blocker on failure
+                print("[Error] Failed to render response: {}".format(e))
+                self.__patient.removeBlock(self.__activity.getConversationID())
 
     def renderResponseForQuery(self):  # constructs a response based on the user's query intent
         # General tip - provide AS LITTLE information as possible with each response. Force user to ask right ?s
@@ -161,6 +166,8 @@ class LUIS:
             name = self.__activity.getUserName()  # check if user's name is defined
             self.__response = "Hello, Dr. {}".format(name[1]) if name else "Hello"
         elif self.__topIntent.intent == "GetName":  # asking for name
+            a = None # ***
+            print(a['hi'])  # ***
             self.__response = self.__patient.name
 
         # Recognizer Intents:
