@@ -156,7 +156,7 @@ class LUIS:
         # Non-Historical Intents:
         if self.__topIntent.intent == "Greeting":
             name = self.__activity.getUserName()  # check if user's name is defined
-            self.__response = "Hello" + ", Dr. {}".format(name[1]) if name else ""
+            self.__response = "Hello, Dr. {}".format(name[1]) if name else "Hello"
         elif self.__topIntent.intent == "GetName":  # asking for name
             self.__response = self.__patient.name
 

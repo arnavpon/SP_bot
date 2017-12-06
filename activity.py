@@ -3,7 +3,6 @@
 import requests
 import json
 import re
-import math
 from random import randint
 from pprint import pprint
 from patient.patient import Patient
@@ -76,25 +75,14 @@ class Activity():
                         elif "category" in received_value:  # user selected a CATEGORY (specialty)
                             cat = received_value['category']  # get the selected category name
                             ccs_for_cat = Patient.getChiefComplaintsForCategory(cat)  # get CCs for specified category
-                            abbrev_cat = ""  # abbreviation to display in button title
-                            if cat.lower() == "internal medicine":  # map -> abbreviation so name displays fully
-                                abbrev_cat = "IM"
-                            elif cat.lower() == "family medicine":
-                                abbrev_cat = "FM"
-                            elif cat.lower() == "psychiatry":
-                                abbrev_cat = "Psych"
-                            elif cat.lower() == "neurology":
-                                abbrev_cat = "Neuro"
-                            elif cat.lower() == "pediatrics":
-                                abbrev_cat = "Peds"
                             show_actions = [self.createAction(cc.title(), option_key="intro_2",
                                                                   option_value={"id": str(_id)})
                                             for cc, _id in ccs_for_cat]  # create show card actions
                             body = [
-                                self.createTextBlock("Which do you prefer?")
+                                self.createTextBlock("Select a case")
                             ]
                             actions = [
-                                self.createAction("Random {} case".format(abbrev_cat), option_key="intro_2",
+                                self.createAction("Random Complaint", option_key="intro_2",
                                                   option_value={"option": 0, "category": cat}),
                                 self.createAction("Choose by chief complaint", type=1,
                                                   body=[self.createTextBlock("Select a chief complaint:")],
@@ -118,19 +106,21 @@ class Activity():
     def initializeBot(self):  # renders initial (position = 0) flow for the bot
         self.__patient = None  # *clear existing patient object to start!*
         categories = Patient.getAllCategories()  # fetch set of all categories
+        self.getUserProfile()  # attempt to access user's profile ONLY @ initialization time
 
         # Create a list of sub-actions (for the ShowCard) by category:
         show_actions = [
             self.createAction(cat.title(), option_key='intro_1', option_value={"category": cat})
             for cat in categories]  # set the selection option -> the category name
 
-        welcome = "Welcome to the Interview Bot" + " {}".format(self.__user_name[0]) if self.__user_name else "!"
+        welcome = "Welcome to the Interview Bot"
+        welcome += " {}".format(self.__user_name[0]) if self.__user_name else "!"
         body = [
             self.createTextBlock(welcome, size="large", weight="bolder"),
             self.createTextBlock("Please select an option to get started:")
         ]
         actions = [
-            self.createAction("Choose random case", option_key="intro_1", option_value={"option": 0}),
+            self.createAction("Random Case", option_key="intro_1", option_value={"option": 0}),
             self.createAction("Select case by specialty", type=1,
                               body=[self.createTextBlock("Choose by specialty:")],
                               actions=show_actions)
@@ -301,9 +291,6 @@ class Activity():
         additional_messages = list()  # list of additional messages after first to send
         if len(actions) > 0:  # make sure there is at least 1 action before creating attachment
             if self.routeDirectToFacebook():  # construct Facebook-specific card
-                count = len([action for action in actions if action['type'] != "Action.ShowCard"])
-                print("[AdaptiveCard] Count = {}".format(count))
-
                 card_title = ""  # init as empty string
                 for i, block in enumerate(body):  # body is LIST of text blocks - combine into single string
                     to_add = block['text']
@@ -314,10 +301,10 @@ class Activity():
                     card_title += self.modifyTextFormattingForFacebook(to_add) + "\n\n"
 
                 buttons = list()  # initialize list of action buttons
-                for action in actions:  # construct Facebook Messenger button for each action - *LIMIT 3 per template!*
-                    if action['type'] == "Action.ShowCard":  # SHOW card - send options in separate cards
-                        show_title = action['card']['body']  # get list of body items
-                        show_actions = action['card']['actions']  # list of dropdown actions
+                for i, action in enumerate(actions):  # construct Facebook Messenger button for each action - *LIMIT 3 per template!*
+                    # if action['type'] == "Action.ShowCard":  # SHOW card - send options in separate cards
+                    #     show_title = action['card']['body']  # get list of body items
+                    #     show_actions = action['card']['actions']  # list of dropdown actions
                         # for i, _ in enumerate(show_actions):  # every 3 buttons (limit), create new template card
                         #     empty_title = [self.createTextBlock(text="...")]
                         #     if i == 2:  # FIRST set of cards for ShowCard - add title
@@ -330,23 +317,38 @@ class Activity():
                         #             additional_messages.append({"body": empty_title, "actions": show_actions[index:]})
                         #         else:  # no title shown yet - include title
                         #             additional_messages.append({"body": show_title, "actions": show_actions[index:]})
-                        additional_messages.append({"body": show_title, "actions": show_actions})
-                    else:  # DEFAULT card type
-                        if count <= 3:  # less than 3 buttons required - use Button Template
-                            button = {
-                                "type": "postback",
-                                "title": action['title'],
-                                "payload": json.dumps(action['data'])
-                            }  # payload MUST be <Str>, to send dict payload transmit as JSON (handled by BotFramework)
-                        else:  # more than 3 buttons required - use Quick Reply template
-                            button = {
-                                "content_type": "text",
-                                "title": action['title'],
-                                "payload": json.dumps(action['data'])
-                            }
-                        buttons.append(button)  # add button to list
+                    #     additional_messages.append({"body": show_title, "actions": show_actions})
+                    # else:  # DEFAULT card type
+                    #     if count <= 3:  # less than 3 buttons required - use Button Template
+                    #         button = {
+                    #             "type": "postback",
+                    #             "title": action['title'],
+                    #             "payload": json.dumps(action['data'])
+                    #         }  # payload MUST be <Str>, to send dict payload transmit as JSON (handled by BotFramework)
+                    #     else:  # more than 3 buttons required - use Quick Reply template
+                    #         button = {
+                    #             "content_type": "text",
+                    #             "title": action['title'],
+                    #             "payload": json.dumps(action['data'])
+                    #         }
+                    #     buttons.append(button)  # add button to list
 
-                if count <= 3:  # Button Template
+                    if len(actions) <= 3:  # less than 3 buttons required - use Button Template (LIMIT 3 options!)
+                        button = {
+                            "type": "postback",
+                            "title": action['title'],
+                            "payload": json.dumps(action['data'])
+                        }  # payload MUST be <Str>, to send dict payload transmit as JSON (handled by BotFramework)
+                    else:  # more than 3 buttons required - use Quick Reply template (*LIMIT of 11 options!*)
+                        button = {
+                            "content_type": "text",
+                            "title": action['title'],
+                            "payload": json.dumps(action['data'])
+                        }
+                        if i == 10: break  # 11th option is maximum
+                    buttons.append(button)  # add button to list
+
+                if len(actions) <= 3:  # Button Template
                     attachment = {
                         "attachment": {
                             "type": "template",
