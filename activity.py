@@ -13,7 +13,6 @@ UPDATED_POSITION = None  # indicator used to prevent backwards actions in conver
 
 class Activity():
 
-    PSID = "613112555746530"  # Facebook page ID
     PAGE_ACCESS_TOKEN = "EAAD7sZBOYsK4BAJt95X17v6ZCstfHi3UgUkJZCcetgVEJpH6tFN5Ju3zQ2CTXJ" \
                         "M35o8gteO17Ixk5N96gQxUIJug5IsjSozCEogiuqgKQEfWGMf9HlIABFyC7wC4cRkugwaLssad" \
                         "9AVuPFXkw6muELn9jljXmL964bqvZCvioQZDZD"  # token to access FB page
@@ -79,7 +78,7 @@ class Activity():
                                                                   option_value={"id": str(_id)})
                                             for cc, _id in ccs_for_cat]  # create show card actions
                             body = [
-                                self.createTextBlock("Select a case")
+                                self.createTextBlock("Select a chief complaint:")
                             ]
                             actions = [
                                 self.createAction("Random Complaint", option_key="intro_2",
@@ -120,7 +119,7 @@ class Activity():
             self.createTextBlock("Please select an option to get started:")
         ]
         actions = [
-            self.createAction("Random Case", option_key="intro_1", option_value={"option": 0}),
+            self.createAction("Random Specialty", option_key="intro_1", option_value={"option": 0}),
             self.createAction("Select case by specialty", type=1,
                               body=[self.createTextBlock("Choose by specialty:")],
                               actions=show_actions)
@@ -132,17 +131,20 @@ class Activity():
 
     def getUserProfile(self):  # accesses user's name
         if self.__channel_id == "facebook":
-            profile_request = requests.get("https://graph.facebook.com/v2.6/{}?"
-                                           "fields=first_name,last_name"
-                                           "&access_token={}".format(Activity.PSID, Activity.PAGE_ACCESS_TOKEN))
-            print("\nSent user profile request with code {}".format(profile_request.status_code))
-            if profile_request.status_code == 200:  # successful request
-                response = profile_request.json()
-                print(response)
-                if ("first_name" in response) and ("last_name" in response):  # safety check
-                    first_name, last_name = response['first_name'], response['last_name']
-                    print("First: {}, Last: {}".format(first_name, last_name))
-                    self.__user_name = first_name, last_name  # store to self property
+            sender = self.__postBody['from'].get('id', None)  # access the sender's ID if it exists
+            if sender:
+                profile_request = requests.get("https://graph.facebook.com/v2.6/{}?"
+                                               "fields=first_name,last_name"
+                                               "&access_token={}".format(sender, Activity.PAGE_ACCESS_TOKEN))
+                print("\nSent user profile request with code {} {}".format(profile_request.status_code,
+                                                                           profile_request.reason))
+                if profile_request.status_code == 200:  # successful request
+                    response = profile_request.json()
+                    print(response)
+                    if ("first_name" in response) and ("last_name" in response):  # safety check
+                        first_name, last_name = response['first_name'], response['last_name']
+                        print("First: {}, Last: {}".format(first_name, last_name))
+                        self.__user_name = first_name, last_name  # store to self property
 
     def renderIntroductoryMessage(self):  # send message that introduces patient & BEGINS the encounter
         self.sendTextMessage(text="1. Type **RESTART** at any time to start a new encounter.\n"
@@ -302,10 +304,13 @@ class Activity():
 
                 buttons = list()  # initialize list of action buttons
                 for i, action in enumerate(actions):  # construct Facebook Messenger button for each action - *LIMIT 3 per template!*
-                    # if action['type'] == "Action.ShowCard":  # SHOW card - send options in separate cards
-                    #     show_title = action['card']['body']  # get list of body items
-                    #     show_actions = action['card']['actions']  # list of dropdown actions
-                        # for i, _ in enumerate(show_actions):  # every 3 buttons (limit), create new template card
+                    if action['type'] == "Action.ShowCard":  # SHOW card - send options in separate cards
+                        show_actions = action['card']['actions']  # list of dropdown actions
+                        for show_action in show_actions:  # for each button, append the title & postback
+                            buttons.append((show_action['title'], json.dumps(show_action['data'])))
+
+                        # show_title = action['card']['body']  # get list of body items
+                        # for i, _ in enumerate(show_actions):  # obtain the
                         #     empty_title = [self.createTextBlock(text="...")]
                         #     if i == 2:  # FIRST set of cards for ShowCard - add title
                         #         additional_messages.append({"body": show_title, "actions": show_actions[:3]})
@@ -318,35 +323,25 @@ class Activity():
                         #         else:  # no title shown yet - include title
                         #             additional_messages.append({"body": show_title, "actions": show_actions[index:]})
                     #     additional_messages.append({"body": show_title, "actions": show_actions})
-                    # else:  # DEFAULT card type
-                    #     if count <= 3:  # less than 3 buttons required - use Button Template
-                    #         button = {
-                    #             "type": "postback",
-                    #             "title": action['title'],
-                    #             "payload": json.dumps(action['data'])
-                    #         }  # payload MUST be <Str>, to send dict payload transmit as JSON (handled by BotFramework)
-                    #     else:  # more than 3 buttons required - use Quick Reply template
-                    #         button = {
-                    #             "content_type": "text",
-                    #             "title": action['title'],
-                    #             "payload": json.dumps(action['data'])
-                    #         }
-                    #     buttons.append(button)  # add button to list
+                    else:  # DEFAULT card type
+                        buttons.append((action['title'], json.dumps(action['data'])))  # append tuple
 
+                formatted_buttons = list()  # format button data appropriate to context
+                for i, (btn_title, btn_payload) in enumerate(buttons):
                     if len(actions) <= 3:  # less than 3 buttons required - use Button Template (LIMIT 3 options!)
                         button = {
                             "type": "postback",
-                            "title": action['title'],
-                            "payload": json.dumps(action['data'])
+                            "title": btn_title,
+                            "payload": btn_payload
                         }  # payload MUST be <Str>, to send dict payload transmit as JSON (handled by BotFramework)
                     else:  # more than 3 buttons required - use Quick Reply template (*LIMIT of 11 options!*)
                         button = {
                             "content_type": "text",
-                            "title": action['title'],
-                            "payload": json.dumps(action['data'])
+                            "title": btn_title,
+                            "payload": btn_payload
                         }
                         if i == 10: break  # 11th option is maximum
-                    buttons.append(button)  # add button to list
+                    formatted_buttons.append(button)
 
                 if len(actions) <= 3:  # Button Template
                     attachment = {
@@ -355,7 +350,7 @@ class Activity():
                             "payload": {
                                 "template_type": "button",
                                 "text": card_title,
-                                "buttons": buttons
+                                "buttons": formatted_buttons
                             }
                         }
                     }
@@ -378,14 +373,14 @@ class Activity():
                 message_shell.update(attachments=attachment)  # update shell w/ attachments
 
         pprint(message_shell)
-        self.deliverMessage(return_url, head, message_shell)  # send main message
-        for msg in additional_messages:  # send all additional messages AFTER main message
-            print("Delivering additional message [{}]...".format(msg))
-            if "text" in msg:  # TEXT message
-                self.sendTextMessage(msg['text'])
-            else:  # CARD message
-                title = msg['body'] if 'body' in msg else list()
-                self.sendAdaptiveCardMessage(actions=msg['actions'], body=title)
+        # self.deliverMessage(return_url, head, message_shell)  # send main message
+        # for msg in additional_messages:  # send all additional messages AFTER main message
+        #     print("Delivering additional message [{}]...".format(msg))
+        #     if "text" in msg:  # TEXT message
+        #         self.sendTextMessage(msg['text'])
+        #     else:  # CARD message
+        #         title = msg['body'] if 'body' in msg else list()
+        #         self.sendAdaptiveCardMessage(actions=msg['actions'], body=title)
 
     def deliverMessage(self, return_url, head, message_shell):  # delivers message to URL
         req = requests.post(return_url, data=json.dumps(message_shell), headers=head)  # send response
