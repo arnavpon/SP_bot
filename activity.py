@@ -19,7 +19,7 @@ class Activity():
 
     # --- INITIALIZERS ---
     def __init__(self, authenticator, post_body, position, user, patient):  # initializer
-        print("\nInitializing ACTIVITY object for user {} w/ JSON data:".format(user))  # ***
+        print("\nInitializing ACTIVITY object w/ JSON data:")
         pprint(post_body)  # output JSON from bot client
         self.__authenticator = authenticator  # store the <Authentication> object
         self.__postBody = post_body  # store the POST data
@@ -101,6 +101,9 @@ class Activity():
                             self.__patient = Patient(received_value["id"])  # initialize the specified case
                             self.renderIntroductoryMessage()
                         UPDATED_POSITION = 3  # move to next position in flow
+
+                elif ("text" in self.__postBody) and (self.__patient is None):  # break in flow
+                    self.initializeBot()  # re-initialize bot
 
     def initializeBot(self):  # renders initial (position = 0) flow for the bot
         self.__patient = None  # *clear existing patient object to start!*
@@ -340,7 +343,7 @@ class Activity():
                         if i == 10: break  # 11th option is maximum
                     formatted_buttons.append(button)
 
-                if len(buttons) <= 3:  # Button Template
+                if len(buttons) <= 3:  # construct attachment for Button Template
                     attachment = {
                         "attachment": {
                             "type": "template",
