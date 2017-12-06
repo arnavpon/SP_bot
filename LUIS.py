@@ -1,12 +1,10 @@
-# Class that handles the interaction with the LUIS framework
-
 import json
 from tornado.httpclient import AsyncHTTPClient
 from urllib.parse import quote_plus
 from scope import Scope
 from patient.patient import Substance
 
-class LUIS:
+class LUIS:  # handles interaction with LUIS framework
 
     # --- CLASS METHODS ---
     @classmethod
@@ -103,28 +101,20 @@ class LUIS:
     def handle_response(self, response):  # CALLBACK method for the asynchronous web request
         print("\n[callback] Received response from LUIS app:")
         if response.error:  # check for error
-            print("[Error] {}".format(response.error))
+            print("[LUIS Error] {}".format(response.error))
             self.__patient.removeBlock(self.__activity.getConversationID())  # remove block
         else:  # successful web request - get intents & entities for user input
             json_data = json.loads(response.body.decode('utf-8'))  # get JSON dict from HTTP body
             self.__topIntent = Intent(json_data.get('topScoringIntent', None))  # access the HIGHEST probability intent
             self.__intents = [Intent(i) for i in json_data.get('intents', [])]  # access each intent & wrap it in class
             self.__entities = [Entity(e) for e in json_data.get('entities', [])]  # access each intent & wrap in class
-            for i, intent in enumerate(self.__intents):
-                print("Intent #{}: '{}' | P = {}".format(i, intent.intent, intent.score))
-            # for e in self.__entities:
-            #     print("Word [{}] @ indices ({}, {}) is part of entity [{}] w/ P={}".format(e.entity, e.startIndex,
-            #                                                                                e.endIndex,
-            #                                                                                e.type, e.score))
-            # print("\nCLASSIFICATION => '{}'".format(self.__topIntent.intent))
-
             self.__patient.logQueryData(self.__activity.getConversationID(), self.__query,
                                         self.__intents, self.__entities)  # log query -> DB
             try:  # wrap in try statement so we can still remove blocker after server error
                 self.renderResponseForQuery()
             except Exception as e:  # remove blocker on failure
-                print("[Error] Failed to render response: {}".format(e))
-                self.__patient.removeBlock(self.__activity.getConversationID())
+                print("[{}] Unable to render response: <{}>".format(type(e), e))
+                self.__patient.removeBlock(self.__activity.getConversationID())  # free up for next request
 
     def renderResponseForQuery(self):  # constructs a response based on the user's query intent
         # General tip - provide AS LITTLE information as possible with each response. Force user to ask right ?s
@@ -166,7 +156,6 @@ class LUIS:
             name = self.__activity.getUserName()  # check if user's name is defined
             self.__response = "Hello, Dr. {}".format(name[1]) if name else "Hello"
         elif self.__topIntent.intent == "GetName":  # asking for name
-            raise EOFError("some issue")  # ***
             self.__response = self.__patient.name
 
         # Recognizer Intents:

@@ -1,5 +1,3 @@
-# Handles application security - authenticates incoming & outgoing requests as defined in Bot Framework Documentation
-
 import requests
 import jwt
 import json
@@ -7,7 +5,7 @@ from jwt.algorithms import RSAAlgorithm
 from datetime import datetime, timedelta
 from pprint import pprint
 
-class Authentication:
+class Authentication:  # handles authentication of incoming & outgoing messages
 
     # --- INSTANCE METHODS
     def __init__(self):
