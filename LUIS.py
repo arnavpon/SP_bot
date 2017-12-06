@@ -97,8 +97,8 @@ class LUIS:
 
     def passQueryToApp(self):  # send query -> LUIS application
         print("Passed asynchronous request to LUIS, awaiting response...")
-        client = AsyncHTTPClient()
-        client.fetch(self.__url, self.handle_response)
+        client = AsyncHTTPClient()  # create an asynchronous request
+        client.fetch(self.__url, self.handle_response)  # defines callball to handle the response
 
     def handle_response(self, response):  # CALLBACK method for the asynchronous web request
         print("\n[callback] Received response from LUIS app:")
@@ -166,8 +166,7 @@ class LUIS:
             name = self.__activity.getUserName()  # check if user's name is defined
             self.__response = "Hello, Dr. {}".format(name[1]) if name else "Hello"
         elif self.__topIntent.intent == "GetName":  # asking for name
-            a = None # ***
-            print(a['hi'])  # ***
+            raise EOFError("some issue")  # ***
             self.__response = self.__patient.name
 
         # Recognizer Intents:
