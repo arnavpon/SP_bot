@@ -136,14 +136,10 @@ class Activity():
                 profile_request = requests.get("https://graph.facebook.com/v2.6/{}?"
                                                "fields=first_name,last_name"
                                                "&access_token={}".format(sender, Activity.PAGE_ACCESS_TOKEN))
-                print("\nSent user profile request with code {} {}".format(profile_request.status_code,
-                                                                           profile_request.reason))
                 if profile_request.status_code == 200:  # successful request
                     response = profile_request.json()
-                    print(response)
                     if ("first_name" in response) and ("last_name" in response):  # safety check
                         first_name, last_name = response['first_name'], response['last_name']
-                        print("First: {}, Last: {}".format(first_name, last_name))
                         self.__user_name = first_name, last_name  # store to self property
 
     def renderIntroductoryMessage(self):  # send message that introduces patient & BEGINS the encounter
@@ -358,7 +354,7 @@ class Activity():
                 else:  # Quick Replies template
                     attachment = {
                         "text": card_title,
-                        "quick_replies": buttons
+                        "quick_replies": formatted_buttons
                     }
                 message_shell.update(message=attachment)  # update shell w/ attachments
 
@@ -375,13 +371,13 @@ class Activity():
         pprint(message_shell)
         self.deliverMessage(return_url, head, message_shell)  # send main message
 
-        # for msg in additional_messages:  # send all additional messages AFTER main message
-        #     print("Delivering additional message [{}]...".format(msg))
-        #     if "text" in msg:  # TEXT message
-        #         self.sendTextMessage(msg['text'])
-        #     else:  # CARD message
-        #         title = msg['body'] if 'body' in msg else list()
-        #         self.sendAdaptiveCardMessage(actions=msg['actions'], body=title)
+        for msg in additional_messages:  # send all additional messages AFTER main message (required for LARGE msg)
+            print("Delivering additional message [{}]...".format(msg))
+            if "text" in msg:  # TEXT message
+                self.sendTextMessage(msg['text'])
+            else:  # CARD message
+                title = msg['body'] if 'body' in msg else list()
+                self.sendAdaptiveCardMessage(actions=msg['actions'], body=title)
 
     def deliverMessage(self, return_url, head, message_shell):  # delivers message to URL
         req = requests.post(return_url, data=json.dumps(message_shell), headers=head)  # send response

@@ -148,6 +148,7 @@ class LUIS:
         #      - 2) Submit fully compliant bot -> FB for publishing (can test as admin/tester/dev w/o publish!)
         #       need an app icon (1024 x 1024)
         #       privacy policy URL - append to server
+        #       get started page - hitting some button passes info to your webhook, not sure how to setup
         # - 4) Launch & market!
 
         # Improving Recognition Model:
