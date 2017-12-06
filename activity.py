@@ -103,7 +103,7 @@ class Activity():
                         UPDATED_POSITION = 3  # move to next position in flow
 
                 elif ("text" in self.__postBody) and (self.__patient is None):  # break in flow
-                    self.initializeBot()  # re-initialize bot
+                    self.initializeBot()  # re-initialize
 
     def initializeBot(self):  # renders initial (position = 0) flow for the bot
         self.__patient = None  # *clear existing patient object to start!*
