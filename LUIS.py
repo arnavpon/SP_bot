@@ -146,6 +146,8 @@ class LUIS:
         #       https://developers.facebook.com/docs/messenger-platform/prelaunch-checklist
         #      - 1) Modify bot to comply w/ FB guidelines, need privacyURL (lookup?)
         #      - 2) Submit fully compliant bot -> FB for publishing (can test as admin/tester/dev w/o publish!)
+        #       need an app icon (1024 x 1024)
+        #       privacy policy URL - append to server
         # - 4) Launch & market!
 
         # Improving Recognition Model:

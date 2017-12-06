@@ -344,7 +344,7 @@ class Activity():
                         if i == 10: break  # 11th option is maximum
                     formatted_buttons.append(button)
 
-                if len(actions) <= 3:  # Button Template
+                if len(buttons) <= 3:  # Button Template
                     attachment = {
                         "attachment": {
                             "type": "template",
