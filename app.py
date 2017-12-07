@@ -80,10 +80,9 @@ class MainHandler(web.RequestHandler):
 
 if __name__ == '__main__':
     print("[{}] Starting HTTP server @ IP {} & Port {}...".format(datetime.now(), ip, host_port))
-    root = os.path.join("static")
     app = web.Application([
         (r"/", MainHandler),
-        (r"/(.+)", web.StaticFileHandler, {"path": "/static/privacy_policy.html"})
+        (r"/privacy_policy\.html", web.StaticFileHandler, {"path": "/static/privacy_policy.html"})
     ])  # routes requests to the root url '/' -> the MainHandler class
     app.listen(host_port)  # listen @ localhost port (default is 8000 unless specified in os.environ variable)
     ioloop.IOLoop.instance().start()  # start the main event loop
