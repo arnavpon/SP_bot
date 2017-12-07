@@ -12,7 +12,7 @@ CONVERSATIONS = dict()  # KEY = conversationID, VALUE = dict w/ KEYS of "positio
 authenticator = Authentication()  # initialize authentication object
 
 class MainHandler(web.RequestHandler):
-    def get(self, *args, **kwargs):  # incoming GET request (test)
+    def get(self, *args, **kwargs):  # incoming GET request
         print("\nParsing GET request...")
 
         # Erase any conversation in the server cache older than 24 hours:
@@ -78,11 +78,12 @@ class MainHandler(web.RequestHandler):
             CONVERSATIONS[conversation].update(user=current_activity.getUserName())  # cache user if exists
             CONVERSATIONS[conversation].update(timestamp=datetime.now())  # log current time of interaction
 
-
 if __name__ == '__main__':
     print("[{}] Starting HTTP server @ IP {} & Port {}...".format(datetime.now(), ip, host_port))
+    root = os.path.join("static")
     app = web.Application([
         (r"/", MainHandler),
+        (r"/(.+)", web.StaticFileHandler, {"path": "/static/privacy_policy.html"})
     ])  # routes requests to the root url '/' -> the MainHandler class
     app.listen(host_port)  # listen @ localhost port (default is 8000 unless specified in os.environ variable)
     ioloop.IOLoop.instance().start()  # start the main event loop
