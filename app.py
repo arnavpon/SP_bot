@@ -80,9 +80,10 @@ class MainHandler(web.RequestHandler):
 
 if __name__ == '__main__':
     print("[{}] Starting HTTP server @ IP {} & Port {}...".format(datetime.now(), ip, host_port))
+    static_dir = os.path.join(os.path.abspath('.'), 'static')  # get path -> static directory
     app = web.Application([
         (r"/", MainHandler),
-        (r"/static/(.*)", web.StaticFileHandler, {"path": "/static"})
-    ])  # routes requests to the root url '/' -> the MainHandler class
+        (r"/static/(.*)", web.StaticFileHandler, {"path": static_dir, "default_filename": "privacy_policy.html"})
+    ])  # routes requests to the root url '/' -> the MainHandler class, requests -> '/static/' to a file handler
     app.listen(host_port)  # listen @ localhost port (default is 8000 unless specified in os.environ variable)
     ioloop.IOLoop.instance().start()  # start the main event loop
