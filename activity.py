@@ -396,9 +396,11 @@ class Activity():
                 self.sendAdaptiveCardMessage(actions=msg['actions'], body=title)
 
     def deliverMessage(self, return_url, head, message_shell):  # delivers message to URL
+        global UPDATED_POSITION
         req = requests.post(return_url, data=json.dumps(message_shell), headers=head)  # send response
         print("Sent response to URL: [{}] with code {}".format(return_url, req.status_code))
-        if self.__patient:  # check if patient exists
+        if self.__patient and ('text' in message_shell) and (UPDATED_POSITION >= 0):
+            self.__patient.logResponse(self.__conversation_id, message_shell['text'], req.status_code, req.reason)
             self.__patient.removeBlock(activity=self)  # remove block AFTER sending msg to prep for next query
         if req.status_code != 200:  # check for errors on delivery
             print("[Delivery ERROR] Msg: {}".format(req.json()))

@@ -495,6 +495,17 @@ class Patient:  # a model for the SP that houses all historical information
             {'$push': {'queries': entry}}
         )  # add each complete query record as its own entry in the array
 
+    def logResponse(self, conversation, text_response, status_code, reason):  # logs the response sent by bot -> user
+        self.initializeConversationRecord(conversation)
+        response = {
+            "message": text_response,
+            "http_response": "{}: {}".format(status_code, reason),
+        }
+        db.conversations.update_one(
+            {'conversation': conversation},
+            {'$push': {'queries': response}}
+        )
+
     def logFeedback(self, conversation, user_input):  # stores user feedback for the converation
         self.initializeConversationRecord(conversation)
         db.conversations.update_one(
