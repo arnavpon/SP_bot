@@ -157,7 +157,7 @@ class Activity():
                 },
                 "sender_action": "typing_off"
             }
-            requests.post(url, json=data, head={"Content-Type: application/json"})  # post action -> Facebook
+            requests.post(url, json=data, headers={"Content-Type: application/json"})  # post action -> Facebook
 
     def renderIntroductoryMessage(self):  # send message that introduces patient & BEGINS the encounter
         self.sendTextMessage(text="1. Type **RESTART** at any time to start a new encounter.\n"

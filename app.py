@@ -93,7 +93,7 @@ class MainHandler(web.RequestHandler):
                 },
                 "sender_action": "typing_on"
             }
-            requests.post(url, json=data, head={"Content-Type: application/json"})  # post action -> Facebook
+            requests.post(url, json=data, headers={"Content-Type: application/json"})  # post action -> Facebook
 
     def updateConversationsDictionary(self, conversation, position, patient, user):
         global CONVERSATIONS  # access global variable
