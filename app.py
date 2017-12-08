@@ -25,7 +25,9 @@ class MainHandler(web.RequestHandler):
         self.write("Expiration threshold = {}<br>".format(expiration))
         to_delete = list()  # list of conversations to remove
         for conversation, logs in CONVERSATIONS.items():
+            print("Conversation: {}".format(conversation))
             if 'timestamp' in logs:  # access timestamp
+                print("timestamp={}".format(logs['timestamp']))  # ***
                 if logs['timestamp'] < expiration:  # timestamp is more than 24 hours old
                     to_delete.append(conversation)
         for conversation in to_delete:  # delete all marked conversations

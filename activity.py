@@ -399,7 +399,7 @@ class Activity():
         global UPDATED_POSITION
         req = requests.post(return_url, data=json.dumps(message_shell), headers=head)  # send response
         print("Sent response to URL: [{}] with code {}".format(return_url, req.status_code))
-        if self.__patient and ('text' in message_shell) and (UPDATED_POSITION >= 0):
+        if self.__patient and ('text' in message_shell) and (UPDATED_POSITION >= 3):  # *set position -> maxVal!*
             self.__patient.logResponse(self.__conversation_id, message_shell['text'], req.status_code, req.reason)
             self.__patient.removeBlock(activity=self)  # remove block AFTER sending msg to prep for next query
         if req.status_code != 200:  # check for errors on delivery
