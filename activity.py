@@ -115,7 +115,7 @@ class Activity():
             for cat in categories]  # set the selection option -> the category name
 
         welcome = "Welcome to the Interview Bot"
-        welcome += " {}".format(self.__user_name[0]) if self.__user_name else "!"
+        welcome += ", {}!".format(self.__user_name[0]) if self.__user_name else "!"
         body = [
             self.createTextBlock(welcome, size="large", weight="bolder"),
             self.createTextBlock("Please select an option to get started:")
