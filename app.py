@@ -2,6 +2,7 @@ import os
 import json
 import activity
 import time
+import requests
 from tornado import ioloop, web
 from datetime import datetime, timedelta
 from authentication import Authentication
@@ -12,6 +13,8 @@ CONVERSATIONS = dict()  # KEY = conversationID, VALUE = dict w/ KEYS of "positio
 authenticator = Authentication()  # initialize authentication object
 
 class MainHandler(web.RequestHandler):
+
+    # --- REQUEST HANDLERS ---
     def get(self, *args, **kwargs):  # incoming GET request
         print("\nParsing GET request...")
 
@@ -41,6 +44,9 @@ class MainHandler(web.RequestHandler):
         auth_header = self.request.headers.get('Authorization', None)
         service_url = post_body.get("serviceUrl", None)
         channel_id = post_body.get("channelId", None)
+        psid = post_body['from'].get('id', None) if 'from' in post_body else None
+        if psid is not None:  # turn on the sender action
+            self.turnOnSenderAction(channel_id, psid)
         status = authenticator.authenticateIncomingMessage(auth_header, service_url, channel_id)  # authenticate req
         while status == 000:  # immature token
             time.sleep(0.05)  # brief delay before attempting to decode token again
@@ -66,17 +72,35 @@ class MainHandler(web.RequestHandler):
             print("Blocker Set? {}".format(patient.isBlocked(conversation)))
             if not patient.isBlocked(conversation):  # blocker is NOT set - pass activity through
                 patient.setBlock(conversation)  # set blocker BEFORE initializing the new activity
-                current_activity = activity.Activity(authenticator, post_body, position, user, patient)  # init Activity
-                CONVERSATIONS[conversation].update(position=activity.UPDATED_POSITION)  # update position
-                CONVERSATIONS[conversation].update(patient=current_activity.getPatient())  # cache patient if it exists
-                CONVERSATIONS[conversation].update(user=current_activity.getUserName())  # cache user if exists
-                CONVERSATIONS[conversation].update(timestamp=datetime.now())  # log current time of interaction
+                current_activity = activity.Activity(authenticator, post_body, position, user, patient)  # init
+                self.updateConversationsDictionary(conversation, activity.UPDATED_POSITION,
+                                                   current_activity.getPatient(), current_activity.getUserName())
         else:  # initialization flow
             current_activity = activity.Activity(authenticator, post_body, position, user, patient)  # init Activity
-            CONVERSATIONS[conversation].update(position=activity.UPDATED_POSITION)  # update position
-            CONVERSATIONS[conversation].update(patient=current_activity.getPatient())  # cache patient if it exists
-            CONVERSATIONS[conversation].update(user=current_activity.getUserName())  # cache user if exists
-            CONVERSATIONS[conversation].update(timestamp=datetime.now())  # log current time of interaction
+            self.updateConversationsDictionary(conversation, activity.UPDATED_POSITION,
+                                               current_activity.getPatient(), current_activity.getUserName())
+
+    # --- INSTANCE METHODS ---
+    def turnOnSenderAction(self, channel, psid):  # Facebook - turns on sender action (... typing on chat)
+        if channel == "facebook":  # make sure this is Facebook channel
+            access_token = "EAAD7sZBOYsK4BAJt95X17v6ZCstfHi3UgUkJZCcetgVEJpH6tFN5Ju3zQ2CTXJ" \
+                            "M35o8gteO17Ixk5N96gQxUIJug5IsjSozCEogiuqgKQEfWGMf9HlIABFyC7wC4cRkugwaLssad" \
+                            "9AVuPFXkw6muELn9jljXmL964bqvZCvioQZDZD"
+            url = "https://graph.facebook.com/v2.6/me/messages?access_token={}".format(access_token)
+            data = {
+                "recipient": {
+                    "id": psid
+                },
+                "sender_action": "typing_on"
+            }
+            requests.post(url, json=data, head={"Content-Type: application/json"})  # post action -> Facebook
+
+    def updateConversationsDictionary(self, conversation, position, patient, user):
+        global CONVERSATIONS  # access global variable
+        CONVERSATIONS[conversation].update(position=position)  # update position
+        CONVERSATIONS[conversation].update(patient=patient)  # cache patient if it exists
+        CONVERSATIONS[conversation].update(user=user)  # cache user if exists
+        CONVERSATIONS[conversation].update(timestamp=datetime.now())  # log current time of interaction
 
 if __name__ == '__main__':
     print("[{}] Starting HTTP server @ IP {} & Port {}...".format(datetime.now(), ip, host_port))

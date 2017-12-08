@@ -132,9 +132,12 @@ class Activity():
         global UPDATED_POSITION
         UPDATED_POSITION = 1  # update the position to prevent out-of-flow actions
 
+    def getPSID(self):  # accesses the sender's ID (PSID) if it exists
+        return self.__postBody['from'].get('id', None) if 'from' in self.__postBody else None
+
     def getUserProfile(self):  # accesses user's name
         if self.__channel_id == "facebook":
-            sender = self.__postBody['from'].get('id', None)  # access the sender's ID if it exists
+            sender = self.getPSID()
             if sender:
                 profile_request = requests.get("https://graph.facebook.com/v2.6/{}?"
                                                "fields=first_name,last_name"
@@ -144,6 +147,17 @@ class Activity():
                     if ("first_name" in response) and ("last_name" in response):  # safety check
                         first_name, last_name = response['first_name'], response['last_name']
                         self.__user_name = first_name, last_name  # store to self property
+
+    def turnOffSenderAction(self):  # Facebook - turns on sender action (... typing on chat)
+        if self.__channel_id == "facebook":  # make sure this is Facebook channel
+            url = "https://graph.facebook.com/v2.6/me/messages?access_token={}".format(Activity.PAGE_ACCESS_TOKEN)
+            data = {
+                "recipient": {
+                    "id": self.getPSID()
+                },
+                "sender_action": "typing_off"
+            }
+            requests.post(url, json=data, head={"Content-Type: application/json"})  # post action -> Facebook
 
     def renderIntroductoryMessage(self):  # send message that introduces patient & BEGINS the encounter
         self.sendTextMessage(text="1. Type **RESTART** at any time to start a new encounter.\n"
@@ -210,7 +224,7 @@ class Activity():
 
     def getResponseHeader(self):  # constructs the response header (submits an Authorization header)
         head = {
-            "Content-type": "application/json"
+            "Content-Type": "application/json"
         }
         if not self.routeDirectToFacebook():  # routing through Bot Framework - add authorization header
             head["Authorization"] = 'Bearer {}'.format(self.__authenticator.authenticateOutgoingMessage())
@@ -386,7 +400,7 @@ class Activity():
         req = requests.post(return_url, data=json.dumps(message_shell), headers=head)  # send response
         print("Sent response to URL: [{}] with code {}".format(return_url, req.status_code))
         if self.__patient:  # check if patient exists
-            self.__patient.removeBlock(self.__conversation_id)  # remove block AFTER sending msg to prep for next query
+            self.__patient.removeBlock(activity=self)  # remove block AFTER sending msg to prep for next query
         if req.status_code != 200:  # check for errors on delivery
             print("[Delivery ERROR] Msg: {}".format(req.json()))
 

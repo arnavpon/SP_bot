@@ -74,12 +74,13 @@ class Patient:  # a model for the SP that houses all historical information
         return set(equivalent_values)  # return as a UNIQUE set
 
     # --- INITIALIZER ---
-    def __init__(self, patientID):  # initialize w/ a reference to a DB object containing the model
-        if (type(patientID) is str): patientID = ObjectId(patientID)  # if ID is not of correct type, cast it
-        self.__patientID = patientID  # store ID to private property
+    def __init__(self, patient_id):  # initialize w/ a reference to a DB object containing the model
+        if type(patient_id) is str:
+            patient_id = ObjectId(patient_id)  # if ID is not of correct type, cast it
+        self.__patientID = patient_id  # store ID to private property
 
         # Using the ID, access the Mongo DB record:
-        record = db.ids.find({"_id": patientID})
+        record = db.ids.find({"_id": patient_id})
         if record.count() == 1:  # returned 1 result
             self.__total_questions = 0  # tracks TOTAL number of questions user should ask - *MUST BE DEFINED FIRST!*
             self.__missed_questions = dict()  # keeps track of each missed question
@@ -480,7 +481,7 @@ class Patient:  # a model for the SP that houses all historical information
         self.initializeConversationRecord(conversation)
         db.conversations.update_one(
             {'conversation': conversation},
-            {'$push': {'queries': error}}
+            {'$push': {'queries': "[ERROR] {}".format(error)}}
         )  # add error as its own entry in the array
 
     def logQueryData(self, conversation, query, intents, entities):
@@ -536,9 +537,10 @@ class Patient:  # a model for the SP that houses all historical information
             db.conversations.insert_one({"conversation": conversation,
                                          "isBlocked": True})  # add conversation & set blocker
 
-    def removeBlock(self, conversation):  # removes blocker to allow Activity to be created
+    def removeBlock(self, activity):  # removes blocker to allow Activity to be created
         print("\n[Patient] REMOVING blocker...")
-        record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
+        activity.turnOffSenderAction()  # turns off the typing (...) indicator in chat
+        record = db.conversations.find_one({"conversation": activity.getConversationID()})  # check if convo is in DB
         if (record):  # conversation ALREADY exists
             db.conversations.update_one(record, {"$set": {"isBlocked": False}})  # remove blocker
 

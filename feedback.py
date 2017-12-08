@@ -97,7 +97,7 @@ class FeedbackModule:
                 self.__position = 1  # MUST manually set position to 1 again
             elif response:  # text response => user FEEDBACK
                 self.__patient.logFeedback(self.__activity.getConversationID(), response) # log feedback to DB
-        self.__patient.removeBlock(self.__activity.getConversationID())  # *remove blocker at end of method!*
+        self.__patient.removeBlock(self.__activity)  # *remove blocker at end of method!*
 
     def formatTextBlock(self, string):  # returns a LIST of text block items using the input string
         blocks = list()

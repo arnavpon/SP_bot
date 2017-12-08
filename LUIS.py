@@ -102,7 +102,7 @@ class LUIS:  # handles interaction with LUIS framework
         print("\n[callback] Received response from LUIS app:")
         if response.error:  # check for error
             print("[LUIS Error] {}".format(response.error))
-            self.__patient.removeBlock(self.__activity.getConversationID())  # remove block
+            self.__patient.removeBlock(self.__activity)  # remove block
         else:  # successful web request - get intents & entities for user input
             json_data = json.loads(response.body.decode('utf-8'))  # get JSON dict from HTTP body
             self.__topIntent = Intent(json_data.get('topScoringIntent', None))  # access the HIGHEST probability intent
@@ -114,7 +114,9 @@ class LUIS:  # handles interaction with LUIS framework
                 self.renderResponseForQuery()
             except Exception as e:  # remove blocker on failure
                 print("[{}] Unable to render response: <{}>".format(type(e), e))
-                self.__patient.removeBlock(self.__activity.getConversationID())  # free up for next request
+                self.__patient.logError(self.__activity.getConversationID(), "{}: {}".format(type(e), e))
+                self.__activity.sendTextMessage(text="Sorry, I didn't understand that. "
+                                                     "Please try rephrasing your question.")  # send error msg
 
     def renderResponseForQuery(self):  # constructs a response based on the user's query intent
         # General tip - provide AS LITTLE information as possible with each response. Force user to ask right ?s
@@ -140,11 +142,7 @@ class LUIS:  # handles interaction with LUIS framework
         #       https://developers.facebook.com/docs/messenger-platform/app-review
         #       https://developers.facebook.com/docs/messenger-platform/prelaunch-checklist
         #      - 1) Modify bot to comply w/ FB guidelines, need privacyURL (lookup?)
-        #      - 2) Submit fully compliant bot -> FB for publishing (can test as admin/tester/dev w/o publish!)
-        #       need an app icon (1024 x 1024)
-        #       privacy policy URL - append to server
-        #       get started page - hitting some button passes info to your webhook, not sure how to setup
-        # - 4) Launch & market!
+        #      - 2) Submit fully compliant bot -> FB for publishing
 
         # Improving Recognition Model:
         # - product similar to LUIS except you can manually control what factors the model takes into account
