@@ -145,6 +145,8 @@ class LUIS:  # handles interaction with LUIS framework
         #       https://developers.facebook.com/docs/messenger-platform/prelaunch-checklist
         #      - 1) Modify bot to comply w/ FB guidelines, bug reported for privacyURL, fixed?
         #      - 2) Submit fully compliant bot -> FB for publishing
+        # - 3) Updating code w/o stopping server
+        #       - we can update static files remotely, but doesn't look like we can remotely update code files
 
         # Improving Recognition Model:
         # - product similar to LUIS except you can manually control what factors the model takes into account

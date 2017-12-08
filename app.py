@@ -16,7 +16,7 @@ class MainHandler(web.RequestHandler):
 
     # --- REQUEST HANDLERS ---
     def get(self, *args, **kwargs):  # incoming GET request
-        print("\nParsing GET request...")
+        print("\nParsing GET request --- updated code ---...")
 
         # Erase any conversation in the server cache older than 24 hours:
         global CONVERSATIONS
