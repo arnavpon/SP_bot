@@ -498,7 +498,7 @@ class Patient:  # a model for the SP that houses all historical information
             self.initializeConversationRecord(conversation)
             db.conversations.update_one(
                 {'conversation': conversation},
-                {'$set': {'name': name}}
+                {'$set': {"name": name}}
             )  # add the name field
 
     def logError(self, conversation, error):  # stores any errors

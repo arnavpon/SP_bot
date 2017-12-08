@@ -68,8 +68,7 @@ class Activity():
                         if "option" in received_value:  # user selected RANDOM CASE option
                             pts = Patient.getAllPatients()
                             rand_pt = randint(0, (pts.count() - 1))  # generate random # from 0 to (# of patients - 1)
-                            self.__patient = Patient(pts[rand_pt]['_id'])  # randomly select one of our SPs & initialize
-                            self.renderIntroductoryMessage()
+                            self.initializePatient(id=pts[rand_pt]['_id'])  # randomly select an SP & initialize
                         elif "category" in received_value:  # user selected a CATEGORY (specialty)
                             cat = received_value['category']  # get the selected category name
                             ccs_for_cat = Patient.getChiefComplaintsForCategory(cat)  # get CCs for specified category
@@ -93,14 +92,10 @@ class Activity():
                         if "option" in received_value:  # user chose random case for selected specialty
                             pts = Patient.getPatientsForCategory(received_value["category"])  # ids for cat
                             rand_pt = randint(0, (len(pts) - 1))  # generate rand num between 0 & (# of patients - 1)
-                            self.__patient = Patient(pts[rand_pt])  # randomly select one of our SPs & initialize
-                            self.renderIntroductoryMessage()
-                            self.__patient.logName(self.__conversation_id, self.__user_name)  # log the user's name
+                            self.initializePatient(id=pts[rand_pt])  # randomly select an SP & initialize
                         elif "id" in received_value:  # user selected a patient ID
                             print("Selected patient with id = {}".format(received_value["id"]))
-                            self.__patient = Patient(received_value["id"])  # initialize the specified case
-                            self.renderIntroductoryMessage()
-                            self.__patient.logName(self.__conversation_id, self.__user_name)  # log the user's name
+                            self.initializePatient(id=received_value["id"])  # randomly select an SP & initialize
                         UPDATED_POSITION = 3  # move to next position in flow
 
                 elif ("text" in self.__postBody) and (self.__patient is None):  # break in flow
@@ -132,6 +127,11 @@ class Activity():
         
         global UPDATED_POSITION
         UPDATED_POSITION = 1  # update the position to prevent out-of-flow actions
+
+    def initializePatient(self, id):  # initializes Patient object w/ specified ID
+        self.__patient = Patient(id)  # initialize the specified case
+        self.renderIntroductoryMessage()  # send start msg
+        self.__patient.logName(self.__conversation_id, self.__user_name)  # log the user's name -> conversation record
 
     def getPSID(self):  # accesses the sender's ID (PSID) if it exists
         return self.__postBody['from'].get('id', None) if 'from' in self.__postBody else None
