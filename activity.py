@@ -95,10 +95,12 @@ class Activity():
                             rand_pt = randint(0, (len(pts) - 1))  # generate rand num between 0 & (# of patients - 1)
                             self.__patient = Patient(pts[rand_pt])  # randomly select one of our SPs & initialize
                             self.renderIntroductoryMessage()
+                            self.__patient.logName(self.__conversation_id, self.__user_name)  # log the user's name
                         elif "id" in received_value:  # user selected a patient ID
                             print("Selected patient with id = {}".format(received_value["id"]))
                             self.__patient = Patient(received_value["id"])  # initialize the specified case
                             self.renderIntroductoryMessage()
+                            self.__patient.logName(self.__conversation_id, self.__user_name)  # log the user's name
                         UPDATED_POSITION = 3  # move to next position in flow
 
                 elif ("text" in self.__postBody) and (self.__patient is None):  # break in flow

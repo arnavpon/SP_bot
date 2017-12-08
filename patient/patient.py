@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from copy import deepcopy
 from scope import Scope
 
 client = MongoClient("mongodb://arnavpon:warhammeR10@mongodb/patients")  # connect to remote MongoDB pod
@@ -451,14 +452,18 @@ class Patient:  # a model for the SP that houses all historical information
                     missed.append("**{} History**: {}".format(outer_k.capitalize(), ", ".join(items)))
         return missed
 
-    # --- SCOPE LOGIC ---
-    def persistCurrentScope(self, conversation, scope):  # called by LUIS class, persists the open scope
+    # --- DATABASE LOGIC ---
+    def initializeConversationRecord(self, conversation):  # creates conversation record in DB if it doesn't exist
         record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
-        if (record):  # conversation ALREADY exists
-            db.conversations.update_one(record, {"$set": {"scope": scope}})  # update scope
-        else:  # conversation does NOT already exist - insert new record
-            db.conversations.insert_one({"conversation": conversation,
-                                         "scope": scope})  # add conversation & scope
+        if record is None:  # conversation does NOT already exist
+            db.conversations.insert_one({"conversation": conversation})  # insert record
+
+    def persistCurrentScope(self, conversation, scope):  # called by LUIS class, persists the open scope
+        self.initializeConversationRecord(conversation)
+        db.conversations.update_one(
+            {'conversation': conversation},
+            {'$set': {"scope": scope}}
+        )  # store the scope
 
     def checkCurrentScope(self, conversation):  # searches for the open scope for a given conversation
         record = db.conversations.find_one({"conversation": conversation}, projection={"scope": 1})
@@ -468,10 +473,33 @@ class Patient:  # a model for the SP that houses all historical information
         db.conversations.update_one(record, {"$unset": {"scope": None}})  # remove the 'scope' value
         print("Closed scope for conversation [{}]...".format(record["conversation"]))
 
-    def initializeConversationRecord(self, conversation):  # creates conversation record in DB if it doesn't exist
+    def cacheQueryForClarification(self, conversation, top_intent, entities):  # clarification CACHING logic
+        # Store a COMPLETE representation of the topIntent + all entities:
+        self.initializeConversationRecord(conversation)
+        intent = {"intent": top_intent.intent, "score": top_intent.score}
+        entities = [{"entity": e.entity, "type": e.type,
+                     "startIndex": e.startIndex, "endIndex": e.endIndex, "score": e.score} for e in entities]
+        db.conversations.update_one(
+            {'conversation': conversation},
+            {'$set': {"clarification": [intent, entities]}}
+        )  # add clarification info
+
+    def getCacheForClarification(self, conversation):  # clarification FETCH logic
         record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
-        if record is None:  # conversation does NOT already exist
-            db.conversations.insert_one({"conversation": conversation})  # insert record
+        if record:  # conversation ALREADY exists
+            data = deepcopy(record.get("clarification", None))  # get a copy of the data
+            db.conversations.update_one(record, {"$unset": {"clarification": None}})  # *REMOVE clarification!*
+            return data  # pass back the topScoring intent + all entities (2 element list)
+        return None  # default - None => no clarification
+
+    def logName(self, conversation, name):  # logs the name of the user having the conversation
+        # the name is used to email specific users asking for feedback about their experiences
+        if name:  # only log names that are NOT None
+            self.initializeConversationRecord(conversation)
+            db.conversations.update_one(
+                {'conversation': conversation},
+                {'$set': {'name': name}}
+            )  # add the name field
 
     def logError(self, conversation, error):  # stores any errors
         self.initializeConversationRecord(conversation)
@@ -512,27 +540,6 @@ class Patient:  # a model for the SP that houses all historical information
             {'conversation': conversation},
             {'$push': {'feedback': user_input}}
         )
-
-    def cacheQueryForClarification(self, conversation, top_intent, entities):  # clarification SAVE logic
-        # Store a COMPLETE representation of the topIntent + all entities:
-        intent = {"intent": top_intent.intent, "score": top_intent.score}
-        entities = [{"entity": e.entity, "type": e.type,
-                     "startIndex": e.startIndex, "endIndex": e.endIndex, "score": e.score} for e in entities]
-        record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
-        if record:  # conversation ALREADY exists
-            db.conversations.update_one(record, {"$set": {"clarification": [intent, entities]}})  # add clarification
-        else:  # conversation does NOT already exist - insert new record
-            db.conversations.insert_one({"conversation": conversation,
-                                         "clarification": [intent, entities]})  # add conversation & clarification
-
-    def getCacheForClarification(self, conversation):  # clarification FETCH logic
-        from copy import deepcopy
-        record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
-        if record:  # conversation ALREADY exists
-            data = deepcopy(record.get("clarification", None))  # get a copy of the data
-            db.conversations.update_one(record, {"$unset": {"clarification": None}})  # *REMOVE clarification!*
-            return data  # pass back the topScoring intent + all entities (2 element list)
-        return None  # default - None => no clarification
 
     # --- FLOW CONTROL ---
     def setBlock(self, conversation):  # sets blocker to prevent new Activity from being created

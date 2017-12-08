@@ -28,7 +28,7 @@ class Scope:
     # --- INSTANCE METHODS ---
     def __init__(self, stored_scope=None):  # init w/ tuple of length 3 (scope, subscope, element)
         # scope: <Int> (rawValue) | sub-scope: <Int> (rawValue) | element: <Str> matched to element name
-        if (stored_scope):  # tuple was provided from DB record
+        if stored_scope is not None:  # tuple was provided from DB record
             assert (type(stored_scope) is tuple or type(stored_scope) is list) and \
                    len(stored_scope) == 3  # make sure the input tuple/list has 3 entries
             self.__scope, self.__subscope, self.__element = stored_scope  # break down elements
@@ -75,16 +75,16 @@ class Scope:
                                                                                     self.__element))
 
     def isScope(self, scope=None, subscope=None, element=None):  # checks if OPEN scope == INPUT scope
-        if (element is not None):  # an element was input
-            if (self.__subscope is not None):  # sub-scope IS defined in self - match to scope + sub-scope + element
+        if element is not None:  # an element was input
+            if self.__subscope is not None:  # sub-scope IS defined in self - match to scope + sub-scope + element
                 if (self.__scope == scope) and \
                         (self.__subscope == subscope) and \
                         (self.__element == element): return True
             else:  # sub-scope is NOT defined in self - match ONLY to scope + element
                 if (self.__scope == scope) and (self.__element == element): return True
-        elif (subscope is not None):  # a sub-scope was input - check that scope AND sub-scope match
+        elif subscope is not None:  # a sub-scope was input - check that scope AND sub-scope match
             if (self.__scope == scope) and (self.__subscope == subscope): return True
-        elif (scope is not None):  # ONLY a scope was input
+        elif scope is not None:  # ONLY a scope was input
             if self.__scope == scope: return True  # only the scopes need to match
         return False  # default return value
 
