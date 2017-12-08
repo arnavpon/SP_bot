@@ -36,7 +36,6 @@ class MainHandler(web.RequestHandler):
         print("\n[{}] Received POST Request from client...".format(datetime.now()))
 
         # (1) Decode the POST data -> a dictionary:
-        print("\nParsing POST request...")
         json_data = self.request.body.decode('utf-8')  # obtain POST body from request, decode from bytes -> Str
         post_body = json.loads(json_data)  # convert JSON data -> dict
 
@@ -93,7 +92,7 @@ class MainHandler(web.RequestHandler):
                 },
                 "sender_action": "typing_on"
             }
-            requests.post(url, json=data, headers={"Content-Type: application/json"})  # post action -> Facebook
+            requests.post(url, json=data, headers={"Content-Type": "application/json"})  # post action -> Facebook
 
     def updateConversationsDictionary(self, conversation, position, patient, user):
         global CONVERSATIONS  # access global variable

@@ -19,7 +19,6 @@ class Activity():
 
     # --- INITIALIZERS ---
     def __init__(self, authenticator, post_body, position, user, patient):  # initializer
-        print("\nInitializing ACTIVITY object w/ JSON data:")
         pprint(post_body)  # output JSON from bot client
         self.__authenticator = authenticator  # store the <Authentication> object
         self.__postBody = post_body  # store the POST data
@@ -157,7 +156,7 @@ class Activity():
                 },
                 "sender_action": "typing_off"
             }
-            requests.post(url, json=data, headers={"Content-Type: application/json"})  # post action -> Facebook
+            requests.post(url, json=data, headers=self.getResponseHeader())  # post action -> Facebook
 
     def renderIntroductoryMessage(self):  # send message that introduces patient & BEGINS the encounter
         self.sendTextMessage(text="1. Type **RESTART** at any time to start a new encounter.\n"

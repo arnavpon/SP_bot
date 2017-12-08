@@ -3,7 +3,6 @@ import jwt
 import json
 from jwt.algorithms import RSAAlgorithm
 from datetime import datetime, timedelta
-from pprint import pprint
 
 class Authentication:  # handles authentication of incoming & outgoing messages
 
@@ -77,14 +76,13 @@ class Authentication:  # handles authentication of incoming & outgoing messages
         return 200  # if all checks are passed, return 200 OK status
 
     def getSecretKeys(self):  # obtains secret keys from Microsoft's authentication server
-        print("Obtaining new JWK from authentication server...")
+        print("Obtaining new JWKs from authentication server...")
         emulator_url = "https://login.microsoftonline.com/botframework.com/v2.0/.well-known/openid-configuration"
         connector_url = "https://login.botframework.com/v1/.well-known/openidconfiguration"
         request_1 = requests.get(connector_url)  # (1) get openID document
         request_body = request_1.json()
         self.__signing_algorithm = request_body['id_token_signing_alg_values_supported']
         jwk_uri = request_body['jwks_uri']  # (2) access URI that specifies location of Bot service's signing keys
-        print("Obtaining signing keys from URI: <{}>".format(jwk_uri))
 
         request_2 = requests.get(jwk_uri)  # send request -> JWK URI
         self.__jwk = request_2.json()['keys']  # (3) obtain signing KEYS from response & cache for 5 days
@@ -98,16 +96,12 @@ class Authentication:  # handles authentication of incoming & outgoing messages
                     if e not in temp:
                         temp[e] = list()  # initialize
                     temp[e].append(i)  # store key's index in array to enable lookup @ authentication time
-            pprint(key)
-            print()
         self.__jwks_by_endorsement = temp  # store index -> self property
         print("Secret keys expire 5d from now on [{}]".format(self.__secret_expiration))
 
     def authenticateOutgoingMessage(self):  # authenticate the OUTGOING message to the user client
-        print("\nAuthenticating OUTGOING message...")
         if self.__active_token:  # active token EXISTS - check that token is NOT expired
             if datetime.now() < self.__token_timeout:  # current time is LESS than timeout time (ACTIVE token)
-                print("Cached token is NOT expired - using active token.".format(self.__active_token))
                 return self.__active_token  # return cached token
         return self.getAuthorizationToken()  # no active token - request & return a NEW one
 
@@ -131,5 +125,5 @@ class Authentication:  # handles authentication of incoming & outgoing messages
         timeout = auth_dict['expires_in']  # get lifespan of token (usu. 3600 seconds = 1 hour)
         td = timedelta(seconds=timeout)  # define time delta using timeout
         self.__token_timeout = datetime.now() + td  # cache the expiration time
-        print("Requested NEW Auth Token: [{}]\nToken expires @ {}".format(token, self.__token_timeout))
+        print("Obtained NEW Auth Token: [{}]\nToken expires @ {}".format(token, self.__token_timeout))
         return token

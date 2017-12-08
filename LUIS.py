@@ -94,15 +94,17 @@ class LUIS:  # handles interaction with LUIS framework
         return False  # default - indicates no match
 
     def passQueryToApp(self):  # send query -> LUIS application
-        print("Passed asynchronous request to LUIS, awaiting response...")
         client = AsyncHTTPClient()  # create an asynchronous request
         client.fetch(self.__url, self.handle_response)  # defines callball to handle the response
 
     def handle_response(self, response):  # CALLBACK method for the asynchronous web request
         print("\n[callback] Received response from LUIS app:")
-        if response.error:  # check for error
+        if response.error:  # check for error from LUIS service
             print("[LUIS Error] {}".format(response.error))
-            self.__patient.removeBlock(self.__activity)  # remove block
+            self.__patient.logQueryData(self.__activity.getConversationID(), self.__query, list(), list())  # log query
+            self.__patient.logError(self.__activity.getConversationID(), "LUIS_ERROR: {}".format(response.error))
+            self.__activity.sendTextMessage(text="Sorry, I didn't understand that. "
+                                                 "Please try rephrasing your question.")  # send error msg
         else:  # successful web request - get intents & entities for user input
             json_data = json.loads(response.body.decode('utf-8'))  # get JSON dict from HTTP body
             self.__topIntent = Intent(json_data.get('topScoringIntent', None))  # access the HIGHEST probability intent
@@ -141,7 +143,7 @@ class LUIS:  # handles interaction with LUIS framework
         #      - refer to FB messenger documentation:
         #       https://developers.facebook.com/docs/messenger-platform/app-review
         #       https://developers.facebook.com/docs/messenger-platform/prelaunch-checklist
-        #      - 1) Modify bot to comply w/ FB guidelines, need privacyURL (lookup?)
+        #      - 1) Modify bot to comply w/ FB guidelines, bug reported for privacyURL, fixed?
         #      - 2) Submit fully compliant bot -> FB for publishing
 
         # Improving Recognition Model:

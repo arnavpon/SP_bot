@@ -13,7 +13,6 @@ class Patient:  # a model for the SP that houses all historical information
     # --- CLASS METHODS ---
     @classmethod
     def getAllCategories(cls):  # get a list of all categories for which at least 1 SP script exists
-        print("\nGenerating list of the available categories...")
         categories = db.ids.find(projection={"category": 1})  # get the IDs for each patient
         unique_categories = list(set(cat['category'] for cat in categories))  # filter to unique categories
         unique_categories.sort()  # sort alphabetically in ASCENDING order
@@ -21,7 +20,6 @@ class Patient:  # a model for the SP that houses all historical information
 
     @classmethod
     def getChiefComplaintsForCategory(cls, category):  # provides a list of all CCs for the given category
-        print("\nFetching chief complaints from store & organizing by category...")
         patients = db.ids.find({"category": category}, projection={"chief_complaint": 1})  # get pts in category
         chief_complaints = list((pt['chief_complaint'][0], pt['_id']) for pt in patients) # [tuples: (CC, _id)]
         chief_complaints.sort(key=lambda x: x[0])  # sorts tuple by ASC FIRST element (CC)
@@ -30,13 +28,11 @@ class Patient:  # a model for the SP that houses all historical information
 
     @classmethod
     def getPatientsForCategory(cls, category):  # get list of SPs for the input category from Mongo
-        print("\nFetching patients from store by category...")
         patients = db.ids.find({"category": category}, projection={"_id": 1})  # get the IDs for each patient
         return [pt['_id'] for pt in patients]  # return LIST of patientIDs
 
     @classmethod
     def getAllPatients(cls):  # get the FULL list of SPs from Mongo
-        print("\nFetching patients from store...")
         return db.ids.find(projection={"_id": 1})  # return a list of all patientIDs
 
     @classmethod
