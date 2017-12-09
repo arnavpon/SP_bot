@@ -37,7 +37,7 @@ class LUIS:  # handles interaction with LUIS framework
         print("\nInitializing LUIS request w/ query=['{}']".format(query))
         luis_enpoint_url = "https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/" \
                            "1cd07ebb-3a30-4662-a655-bed6d8805aa4?subscription-key=3c42debb60f546b2bf166876a0f1ab0c&" \
-                           "timezoneOffset=0&verbose=true&q="
+                           "timezoneOffset=0&spellCheck=true&verbose=true&q="
         self.__url = luis_enpoint_url + "{}".format(quote_plus(query))  # append URL FORMATTED query -> final URL
         self.__query = query  # cache the query (*need it to be logged to some data store*)
         self.__activity = activity  # cache the activity
@@ -589,6 +589,7 @@ class LUIS:  # handles interaction with LUIS framework
                         self.__response = symptom.onset[:index] if index > 0 else symptom.onset
                     # else:  # if NO duration is provided, default -> PROGRESSION (seems to capture similar intent)
                     #     self.__response = symptom.progression
+                    # ** what works better - onset or progression as fallback? **
                 elif query_word in ["how often", "how frequently", "how many"] and (symptom.frequency is not None):
                     self.__response = symptom.frequency
                 elif symptom.quantity is not None:  # catch-all for "Quantity" field of certain symptoms (e.g. fever)
