@@ -508,7 +508,7 @@ class Patient:  # a model for the SP that houses all historical information
             {'$push': {'queries': "[ERROR] {}".format(error)}}
         )  # add error as its own entry in the array
 
-    def logQueryData(self, conversation, query, intents, entities):
+    def logQueryData(self, conversation, query, altered_query="", intents=list(), entities=list()):
         # logs each user query/LUIS classification as tuple: (query, [(intent, probability)], [entities])
         self.initializeConversationRecord(conversation)
         limit = 3  # number of intents to store
@@ -516,7 +516,7 @@ class Patient:  # a model for the SP that houses all historical information
             top_intents = intents[:]
         else:  # more intents than limit
             top_intents = intents[:limit]  # store only the limit (in order from greatest to lowest probability)
-        entry = (query, [(i.intent, i.score) for i in top_intents],
+        entry = ((query, altered_query), [(i.intent, i.score) for i in top_intents],
                  [(e.entity, e.type, e.startIndex, e.endIndex) for e in entities])
         db.conversations.update_one(
             {'conversation': conversation},

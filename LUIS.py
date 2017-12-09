@@ -101,17 +101,20 @@ class LUIS:  # handles interaction with LUIS framework
         print("\n[callback] Received response from LUIS app:")
         if response.error:  # check for error from LUIS service
             print("[LUIS Error] {}".format(response.error))
-            self.__patient.logQueryData(self.__activity.getConversationID(), self.__query, list(), list())  # log query
+            self.__patient.logQueryData(self.__activity.getConversationID(), self.__query)  # log query
             self.__patient.logError(self.__activity.getConversationID(), "LUIS_ERROR: {}".format(response.error))
             self.__activity.sendTextMessage(text="Sorry, I didn't understand that. "
                                                  "Please try rephrasing your question.")  # send error msg
         else:  # successful web request - get intents & entities for user input
             json_data = json.loads(response.body.decode('utf-8'))  # get JSON dict from HTTP body
+            altered_query = json_data.get('alteredQuery', None)  # if spell check alters the query
+            if altered_query:  # query was altered
+                self.__query = altered_query  # overwrite self.query
             self.__topIntent = Intent(json_data.get('topScoringIntent', None))  # access the HIGHEST probability intent
             self.__intents = [Intent(i) for i in json_data.get('intents', [])]  # access each intent & wrap it in class
             self.__entities = [Entity(e) for e in json_data.get('entities', [])]  # access each intent & wrap in class
-            self.__patient.logQueryData(self.__activity.getConversationID(), self.__query,
-                                        self.__intents, self.__entities)  # log query -> DB
+            self.__patient.logQueryData(self.__activity.getConversationID(), self.__query, altered_query=altered_query,
+                                        intents=self.__intents, entities=self.__entities)  # log query/LUIS response
             try:  # wrap in try statement so we can still remove blocker after server error
                 self.renderResponseForQuery()
             except Exception as e:  # remove blocker on failure
