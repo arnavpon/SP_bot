@@ -444,7 +444,7 @@ class LUIS:  # handles interaction with LUIS framework
         else:  # default to PAST MEDICAL HISTORY
             pronoun, verb = self.modifyPronoun("have")
             self.__response = ""  # clear existing text
-            if len(self.__patient.medications) == 0:  # no PMH
+            if len(self.__patient.medical_history) == 0:  # no PMH
                 if query_word in ["do", "does", "have", "has"]:  # YES/NO queries
                     self.__response += "No, "
                 self.__response += "{} {} never been diagnosed with a medical condition.".format(pronoun, verb)
@@ -584,8 +584,11 @@ class LUIS:  # handles interaction with LUIS framework
                 if query_word == "how long":  # duration query
                     if symptom.duration is not None:  # duration IS provided
                         self.__response = symptom.duration
-                    else:  # if NO duration is provided, default -> PROGRESSION (seems to capture similar intent)
-                        self.__response = symptom.progression
+                    else:  # if NO duration is present, default -> ONSET (but modify the string)
+                        index = symptom.onset.find("ago")  # remove the 'ago' portion of the response
+                        self.__response = symptom.onset[:index] if index > 0 else symptom.onset
+                    # else:  # if NO duration is provided, default -> PROGRESSION (seems to capture similar intent)
+                    #     self.__response = symptom.progression
                 elif query_word in ["how often", "how frequently", "how many"] and (symptom.frequency is not None):
                     self.__response = symptom.frequency
                 elif symptom.quantity is not None:  # catch-all for "Quantity" field of certain symptoms (e.g. fever)
