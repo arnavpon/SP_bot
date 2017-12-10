@@ -136,7 +136,7 @@ class LUIS:  # handles interaction with LUIS framework
             for e in self.__entities:  # add the NEW entities to the END of the existing list (*to preserve order!*)
                 updated_e.append(e)
             self.__entities = updated_e  # overwrite the entities object
-            self.__is_clarification = True  # set indicator (needed to findObject logic)
+            self.__is_clarification = True  # set indicator (needed for findObject logic)
 
         e = self.findMatchingEntity("query")  # *(4) check for a QUERY entity AFTER the clarification!*
         query_word = e[0] if len(e) > 0 else ""  # store FIRST query that is found (b/c entities are sent IN ORDER)
@@ -150,6 +150,9 @@ class LUIS:  # handles interaction with LUIS framework
         #      - 2) Submit fully compliant bot -> FB for publishing
         # - 3) Updating code w/o stopping server
         #       - we can update static files remotely, but doesn't look like we can remotely update code files
+
+        # blocker still set on clarification !!!
+        # update LUIS
 
         # Improving Recognition Model:
         # - product similar to LUIS except you can manually control what factors the model takes into account
@@ -556,7 +559,8 @@ class LUIS:  # handles interaction with LUIS framework
                         len(self.findMatchingEntity(of_type="symptom")) > 0:  # query about location OR radiation
             symptom = self.getSymptomForQuery()
             if symptom is not None:  # use the ENTITY to differentiate queries & render a response
-                if len(self.findMatchingEntity("recognizerKeywords", ["radiate", "travel"])) > 0:  # RADIATION query
+                if len(self.findMatchingEntity("recognizerKeywords", ["radiate", "travel",
+                                                                      "move"])) > 0:  # RADIATION query
                     rad = symptom.radiation  # get the radiation LIST
                     self.__response = "To my {}".format(LUIS.joinWithAnd(rad)) if rad else "No"
                 else:  # default -> LOCATION query if no radiation query was found

@@ -458,6 +458,32 @@ class Patient:  # a model for the SP that houses all historical information
         if record is None:  # conversation does NOT already exist
             db.conversations.insert_one({"conversation": conversation})  # insert record
 
+    def setBlock(self, conversation):  # sets blocker to prevent new Activity from being created
+        print("\n[Patient] SETTING blocker...")
+        self.initializeConversationRecord(conversation)
+        db.conversations.update_one(
+            {'conversation': conversation},
+            {'$set': {"isBlocked": True}}
+        )
+
+    def removeBlock(self, activity):  # removes blocker to allow Activity to be created
+        print("\n[Patient] REMOVING blocker for convo {}...".format(activity.getConversationID()))
+        activity.turnOffSenderAction()  # turns off the typing (...) indicator in chat
+        record = db.conversations.find_one({"conversation": activity.getConversationID()})  # check if convo is in DB
+        print("first fetch: ", record)
+        if record:  # conversation ALREADY exists
+            print("record exists!")
+            db.conversations.update_one(record, {"$set": {"isBlocked": False}})  # remove blocker
+
+        record = db.conversations.find_one({"conversation": activity.getConversationID()})  # check if conversation is already in DB
+        print(record)  # ***
+
+    def isBlocked(self, conversation):  # checks if blocker is set for the given conversation
+        record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
+        if record:  # conversation ALREADY exists
+            return record.get("isBlocked", False)  # return the current blocker value or False if key is missing
+        return False  # default return value if record is not found
+
     def persistCurrentScope(self, conversation, scope):  # called by LUIS class, persists the open scope
         self.initializeConversationRecord(conversation)
         db.conversations.update_one(
@@ -483,6 +509,9 @@ class Patient:  # a model for the SP that houses all historical information
             {'conversation': conversation},
             {'$set': {"clarification": [intent, entities]}}
         )  # add clarification info
+
+        record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
+        print(record)  # ***
 
     def getCacheForClarification(self, conversation):  # clarification FETCH logic
         record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
@@ -541,27 +570,6 @@ class Patient:  # a model for the SP that houses all historical information
             {'$push': {'feedback': user_input}}
         )
 
-    # --- FLOW CONTROL ---
-    def setBlock(self, conversation):  # sets blocker to prevent new Activity from being created
-        print("\n[Patient] SETTING blocker...")
-        self.initializeConversationRecord(conversation)
-        db.conversations.update_one(
-            {'conversation': conversation},
-            {'$set': {"isBlocked": True}}
-        )
-
-    def removeBlock(self, activity):  # removes blocker to allow Activity to be created
-        print("\n[Patient] REMOVING blocker...")
-        activity.turnOffSenderAction()  # turns off the typing (...) indicator in chat
-        record = db.conversations.find_one({"conversation": activity.getConversationID()})  # check if convo is in DB
-        if record:  # conversation ALREADY exists
-            db.conversations.update_one(record, {"$set": {"isBlocked": False}})  # remove blocker
-
-    def isBlocked(self, conversation):  # checks if blocker is set for the given conversation
-        record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
-        if record:  # conversation ALREADY exists
-            return record.get("isBlocked", False)  # return the current blocker value or False if key is missing
-        return False  # default return value if record is not found
 
 class Symptom:  # encapsulates a block of information for a given ROS symptom
     def __init__(self, patient, record):  # init w/ the DB record, which functions as a dict
