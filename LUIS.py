@@ -131,12 +131,15 @@ class LUIS:  # handles interaction with LUIS framework
         # (3) Check for a CLARIFICATION object:
         clarification = self.__patient.getCacheForClarification(self.__activity.getConversationID())
         if clarification is not None:  # clarification exists!
-            self.__topIntent = Intent(clarification[0])  # recreate old top scoring intent & overwrite
-            updated_e = [Entity(e) for e in clarification[1]]  # create old entities
-            for e in self.__entities:  # add the NEW entities to the END of the existing list (*to preserve order!*)
-                updated_e.append(e)
-            self.__entities = updated_e  # overwrite the entities object
-            self.__is_clarification = True  # set indicator (needed for findObject logic)
+            entity_type = clarification[2]  # check what entity type we SHOULD be getting
+            if len(self.findMatchingEntity(of_type=entity_type)) > 0:  # check that we received at least 1 such entity
+                self.__topIntent = Intent(clarification[0])  # recreate old top scoring intent & overwrite
+                updated_e = [Entity(e) for e in clarification[1]]  # create old entities
+                for e in self.__entities:  # add the NEW entities to the END of the existing list (*to preserve order!*)
+                    updated_e.append(e)
+                self.__entities = updated_e  # overwrite the entities object
+                self.__is_clarification = True  # set indicator (needed for findObject logic)
+            # *If no entities of specified type are found, simply treat query normally & ignore clarification!*
 
         e = self.findMatchingEntity("query")  # *(4) check for a QUERY entity AFTER the clarification!*
         query_word = e[0] if len(e) > 0 else ""  # store FIRST query that is found (b/c entities are sent IN ORDER)
@@ -298,7 +301,7 @@ class LUIS:  # handles interaction with LUIS framework
                     self.__response = travel.mode  # return response as is
                 else:  # no match found - apply clarification logic
                     self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                              self.__entities)
+                                                              self.__entities, "builtin.geography")
                     self.__response = "Which trip are you referring to?"
 
         # (LAST) Persist the scope object & then render the bot's response:
@@ -316,7 +319,7 @@ class LUIS:  # handles interaction with LUIS framework
                 self.__response = "{} weeks".format(birth.gestational_age)
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "timeQualifier")
                 self.__response = "Which pregnancy are you referring to?"
 
         elif self.__scope.isScope(Scope.FAMILY_HISTORY) or \
@@ -334,7 +337,7 @@ class LUIS:  # handles interaction with LUIS framework
                         self.__response = "{} is {}".format(fm.getGenderPronoun().capitalize(), fm.age)
                 else:  # failure to ID - ask for clarification
                     self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                              self.__entities)
+                                                              self.__entities, "relationship")
                     self.__response = "Which family member are you referring to?"
             else:  # no FH
                 self.__response = "I don't know"
@@ -368,7 +371,7 @@ class LUIS:  # handles interaction with LUIS framework
                 if (birth.delivery_method): self.__response = birth.delivery_method  # OPTIONAL property
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "timeQualifier")
                 self.__response = "Which pregnancy are you referring to?"
 
         elif self.__scope.isScope(Scope.MEDICATIONS):  # medication category
@@ -377,7 +380,7 @@ class LUIS:  # handles interaction with LUIS framework
                 self.__response = med.category
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "medication")
                 self.__response = "Which medication are you referring to?"
 
     def handleGetComplicationsIntent(self, query_word):  # "GET_COMPLICATIONS" intent
@@ -393,7 +396,7 @@ class LUIS:  # handles interaction with LUIS framework
                     self.__response = "No"
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "timeQualifier")
                 self.__response = "Which pregnancy are you referring to?"
 
         elif self.__scope.isScope(scope=Scope.SURGICAL_HISTORY):  # surgical complications
@@ -405,7 +408,7 @@ class LUIS:  # handles interaction with LUIS framework
                     self.__response = "No"
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "surgery")
                 self.__response = "Which surgery are you referring to?"
 
     def handleGetDiseaseIntent(self, query_word):  # "GET_DISEASE" intent
@@ -439,7 +442,7 @@ class LUIS:  # handles interaction with LUIS framework
                             self.__response = "My {} has {}".format(fm.relationship, LUIS.joinWithAnd(fm.conditions))
                 else:  # failure to ID - ask for clarification
                     self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                              self.__entities)
+                                                              self.__entities, "relationship")
                     self.__response = "Which family member are you referring to?"
             else:  # no family history
                 self.__response = "I don't know"
@@ -468,7 +471,7 @@ class LUIS:  # handles interaction with LUIS framework
                 self.__response = allergy.reaction
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "allergy")
                 self.__response = "Which allergy are you referring to?"
         else:  # default to SICK CONTACTS
             contacts = self.__patient.social_history.sick_contacts[
@@ -511,7 +514,7 @@ class LUIS:  # handles interaction with LUIS framework
                 if (birth.gender): self.__response = "A {}".format(birth.gender)  # OPTIONAL
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "timeQualifier")
                 self.__response = "Which pregnancy are you referring to?"
 
         else:  # default -> PATIENT's gender
@@ -525,7 +528,7 @@ class LUIS:  # handles interaction with LUIS framework
                 self.__response = med.indication
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "medication")
                 self.__response = "Which medication are you referring to?"
 
         elif self.__scope.isScope(Scope.SURGICAL_HISTORY):  # reason for surgery
@@ -534,7 +537,7 @@ class LUIS:  # handles interaction with LUIS framework
                 self.__response = surgery.indication
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "surgery")
                 self.__response = "Which surgery are you referring to?"
 
         elif self.__scope.isScope(Scope.BIRTH_HISTORY):  # Birth history - indication for C-section
@@ -543,7 +546,7 @@ class LUIS:  # handles interaction with LUIS framework
                 if (birth.indication): self.__response = birth.indication  # OPTIONAL property
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "timeQualifier")
                 self.__response = "Which pregnancy are you referring to?"
 
     def handleGetLocationIntent(self, query_word):  # "GET_LOCATION" intent
@@ -615,7 +618,7 @@ class LUIS:  # handles interaction with LUIS framework
                         self.__response = "{} was {} pounds, {} ounces".format(birth.getGenderPronoun(), lb, oz)
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                            self.__entities)
+                                                            self.__entities, "timeQualifier")
                 self.__response = "Which pregnancy are you referring to?"
 
         elif self.__scope.isScope(Scope.MEDICAL_HISTORY):  # disease - diagnosis date
@@ -626,7 +629,7 @@ class LUIS:  # handles interaction with LUIS framework
                 if disease.status == Substance.STATUS_PREVIOUS: self.__response += " ago"  # append 'ago' onto response
             else:  # no match found
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "disease")
                 self.__response = "Which diagnosis are you referring to?"
 
         elif self.__scope.isScope(Scope.SURGICAL_HISTORY):  # surgery date
@@ -635,12 +638,11 @@ class LUIS:  # handles interaction with LUIS framework
                 self.__response = surgery.date  # return the date as specified
             else:  # no match found
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "surgery")
                 self.__response = "Which surgery are you referring to?"
 
         elif self.__scope.isScope(Scope.MEDICATIONS):  # medication use - amount
             med = self.identifyObject("medication")
-            print("Lookup - med is ", med)
             if med is not None:  # index was found
                 unit = LUIS.pluralize(med.dose_unit, med.dose_amount)
                 route = med.dose_route
@@ -648,7 +650,7 @@ class LUIS:  # handles interaction with LUIS framework
                 self.__response = "{} {} {} {}".format(med.dose_amount, unit, route, med.dose_rate)
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "medication")
                 self.__response = "Which medication are you referring to?"
 
         elif self.__scope.isScope(Scope.SUBSTANCES):  # substance use - duration vs. amount
@@ -681,7 +683,7 @@ class LUIS:  # handles interaction with LUIS framework
                 self.__response = "I left on {} and got back on {}".format(trip.departure_date, trip.return_date)
             else:  # no match found
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "builtin.geography")
                 self.__response = "Which trip are you referring to?"
 
         elif self.__scope.isScope(Scope.SEXUAL_HISTORY):  # number of partners (current/past year/lifetime)
@@ -700,7 +702,7 @@ class LUIS:  # handles interaction with LUIS framework
                 self.__response = "{}".format(self.__patient.social_history.sexual_history.partners_current)
             else:  # default - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "timeQualifier")
                 self.__response = "Over what time frame?"
 
     def handleGetTimeIntent(self, query_word):  # "GET_TIME" intent
@@ -738,7 +740,7 @@ class LUIS:  # handles interaction with LUIS framework
                     self.__response = "I was {}".format(birth.maternal_age)
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "timeQualifier")
                 self.__response = "Which pregnancy are you referring to?"
 
         elif self.__scope.isScope(Scope.MEDICAL_HISTORY):  # disease - diagnosis date
@@ -749,7 +751,7 @@ class LUIS:  # handles interaction with LUIS framework
                 if query_word == "when": self.__response += " ago"  # append 'ago' onto response
             else:  # no match found
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "disease")
                 self.__response = "Which diagnosis are you referring to?"
 
         elif self.__scope.isScope(Scope.SURGICAL_HISTORY):  # surgery date
@@ -758,7 +760,7 @@ class LUIS:  # handles interaction with LUIS framework
                 self.__response = surgery.date  # return the date as specified
             else:  # no match found - apply clarification logic
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "surgery")
                 self.__response = "Which surgery are you referring to?"
 
         elif self.__scope.isScope(Scope.SUBSTANCES):  # substance use
@@ -788,7 +790,7 @@ class LUIS:  # handles interaction with LUIS framework
                     self.__response = travel.return_date
             else:  # no match found - apply clarification logic
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "builtin.geography")
                 self.__response = "Which trip are you referring to?"
 
         elif self.__scope.isScope(Scope.SEXUAL_HISTORY):  # start age vs. last active
@@ -958,7 +960,7 @@ class LUIS:  # handles interaction with LUIS framework
                 if birth.management: self.__response = "With {}".format(LUIS.joinWithAnd(birth.management))  # OPTIONAL
             else:  # failure to ID - ask for clarification
                 self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                          self.__entities)
+                                                          self.__entities, "timeQualifier")
                 self.__response = "Which pregnancy are you referring to?"
 
     # --- <HPI> INTENT HANDLERS ---
@@ -1071,7 +1073,7 @@ class LUIS:  # handles interaction with LUIS framework
 
         if len(q_symptoms) == 0:  # generic request WITHOUT symptoms explicitly provided
             self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
-                                                      self.__entities)  # clarification logic
+                                                      self.__entities, "symptom")  # clarification logic
             self.__response = "Such as?"  # ask user to clarify
         else:  # at least 1 symptom in query
             assoc_matches = {"yes": list(), "no": list()}  # keeps track of matches for Symptom's associated symptoms

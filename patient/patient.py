@@ -498,7 +498,8 @@ class Patient:  # a model for the SP that houses all historical information
         db.conversations.update_one(record, {"$unset": {"scope": None}})  # remove the 'scope' value
         print("Closed scope for conversation [{}]...".format(record["conversation"]))
 
-    def cacheQueryForClarification(self, conversation, top_intent, entities):  # clarification CACHING logic
+    def cacheQueryForClarification(self, conversation, top_intent, entities, e_type):  # clarification CACHING logic
+        # e_type: specified entity type we SHOULD be receiving with the next request to perform clarification logic
         # Store a COMPLETE representation of the topIntent + all entities:
         self.initializeConversationRecord(conversation)
         intent = {"intent": top_intent.intent, "score": top_intent.score}
@@ -506,7 +507,7 @@ class Patient:  # a model for the SP that houses all historical information
                      "startIndex": e.startIndex, "endIndex": e.endIndex, "score": e.score} for e in entities]
         db.conversations.update_one(
             {'conversation': conversation},
-            {'$set': {"clarification": [intent, entities]}}
+            {'$set': {"clarification": [intent, entities, e_type]}}
         )  # add clarification info
 
     def getCacheForClarification(self, conversation):  # clarification FETCH logic
