@@ -26,9 +26,9 @@ class LUIS:  # handles interaction with LUIS framework
                 if word[-1] == "s":  # PLURAL word - no prefix
                     pass
                 elif word[0].lower() in ["a", "e", "i", "o", "u"]:  # vowel start - prefix w/ "AN"
-                    string += " an "
+                    string += "an "
                 else:  # consonant start - prefix with "A"
-                    string += " a "
+                    string += "a "
             string += word.strip()
         return string
 
@@ -150,9 +150,6 @@ class LUIS:  # handles interaction with LUIS framework
         #      - 2) Submit fully compliant bot -> FB for publishing
         # - 3) Updating code w/o stopping server
         #       - we can update static files remotely, but doesn't look like we can remotely update code files
-
-        # blocker still set on clarification !!!
-        # update LUIS
 
         # Improving Recognition Model:
         # - product similar to LUIS except you can manually control what factors the model takes into account

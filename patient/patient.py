@@ -467,16 +467,15 @@ class Patient:  # a model for the SP that houses all historical information
         )
 
     def removeBlock(self, activity):  # removes blocker to allow Activity to be created
-        print("\n[Patient] REMOVING blocker for convo {}...".format(activity.getConversationID()))
+        print("\n[Patient] REMOVING blocker for {}...".format(activity.getConversationID()))
         activity.turnOffSenderAction()  # turns off the typing (...) indicator in chat
-        record = db.conversations.find_one({"conversation": activity.getConversationID()})  # check if convo is in DB
-        print("first fetch: ", record)
-        if record:  # conversation ALREADY exists
-            print("record exists!")
-            db.conversations.update_one(record, {"$set": {"isBlocked": False}})  # remove blocker
 
-        record = db.conversations.find_one({"conversation": activity.getConversationID()})  # check if conversation is already in DB
-        print(record)  # ***
+        conversation = activity.getConversationID()
+        self.initializeConversationRecord(conversation)
+        db.conversations.update_one(
+            {'conversation': conversation},
+            {"$set": {"isBlocked": False}}
+        )  # remove blocker
 
     def isBlocked(self, conversation):  # checks if blocker is set for the given conversation
         record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
@@ -509,9 +508,6 @@ class Patient:  # a model for the SP that houses all historical information
             {'conversation': conversation},
             {'$set': {"clarification": [intent, entities]}}
         )  # add clarification info
-
-        record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
-        print(record)  # ***
 
     def getCacheForClarification(self, conversation):  # clarification FETCH logic
         record = db.conversations.find_one({"conversation": conversation})  # check if conversation is already in DB
