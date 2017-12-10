@@ -814,18 +814,20 @@ class LUIS:  # handles interaction with LUIS framework
             if self.__patient.developmental_history is not None:  # Dev Hx exists!
                 self.__response = self.__patient.developmental_history.vaccinations
 
-        elif len(self.findMatchingEntity("recognizerKeywords", ["medication", "medications", "medicine", "medicines",
-                                                                "pill", "pills", "supplement", "supplements"])) > 0:
+        elif len(self.findMatchingEntity("recognizerKeywords", ["medication", "medications", "medicine",
+                                                                "medicines", "pill", "pills", "supplement",
+                                                                "supplements"])) > 0 and \
+                ("do" in self.__query or "does" in self.__query):  # ACTIVE query (do/does) gets back medication list
             self.__response = ""  # clear existing text
             if len(self.__patient.medications) == 0:  # no medications
                 pronoun, verb = self.modifyPronoun("do")
-                if query_word in ["do", "does", "are", "is"]:  # YES/NO queries
+                if query_word in ["do", "does"]:  # YES/NO queries
                     self.__response += "No, "
                 self.__response += "{} {} not take any medications.".format(pronoun, verb)
             else:  # at least 1 medication - open medication scope & generate medication list
                 self.__scope.switchScopeTo(Scope.MEDICATIONS)
                 pronoun, verb = self.modifyPronoun("take")
-                if query_word in ["do", "does", "are", "is"]:  # YES/NO queries
+                if query_word in ["do", "does"]:  # YES/NO queries
                     self.__response += "Yes, "
                 self.__response += "{} currently {} {}.".format(pronoun, verb,
                                                                 LUIS.joinWithAnd(self.__patient.getMedicationList(),
@@ -952,7 +954,35 @@ class LUIS:  # handles interaction with LUIS framework
                     self.__response += LUIS.joinWithAnd(disease.treatment, prefix=True)
                 else: self.__response = "It is not being treated"
             else:  # no match found
+                self.__patient.cacheQueryForClarification(self.__activity.getConversationID(), self.__topIntent,
+                                                          self.__entities, "disease")
                 self.__response = "Which diagnosis are you referring to?"
+
+        elif self.__scope.isScope(scope=Scope.CHIEF_COMPLAINT_CURRENT) or \
+                self.__scope.isScope(scope=Scope.CHIEF_COMPLAINT_PREVIOUS) or \
+                        len(self.findMatchingEntity(of_type="symptom")) > 0:
+            symptom = self.getSymptomForQuery()
+            if symptom is not None:
+                if len(self.findMatchingEntity("recognizerKeywords", ["doctor", "emergency department", "physician",
+                                                                      "ed", "treatment", "treated"])) > 0:
+                    # intent: was patient treated for symptoms?
+                    self.__response = "No"  # always respond 'no'
+                else:  # question about medication usage for treatment
+                    matches = list()  # list of medications used for the symptom
+                    for medication in self.__patient.medications:
+                        if medication.indication.strip().lower() == symptom.symptom:  # match
+                            result = "didn't help"  # default result type
+                            for factor in symptom.aggravating_factors:
+                                if medication.name in factor:  # found medication name
+                                    result = "made it worse"
+                            for factor in symptom.alleviating_factors:
+                                if medication.name in factor:  # found medication name
+                                    result = "made it better"
+                            matches.append("{} ({})".format(medication.name, result))  # add medication/result -> array
+                    if len(matches) == 0:  # no matching medications
+                        self.__response = "No, I haven't tried taking any medications."
+                    else:  # at least 1 match
+                        self.__response = "Yes - I tried {}.".format(LUIS.joinWithAnd(matches))
 
         elif self.__scope.isScope(Scope.BIRTH_HISTORY):  # Birth history - management of ectopic/miscarriage/abortion
             birth = self.identifyObject("birth")
