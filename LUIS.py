@@ -35,9 +35,14 @@ class LUIS:  # handles interaction with LUIS framework
     # --- INSTANCE METHODS ---
     def __init__(self, query, activity):  # intialize w/ query made by user & activity for the query
         print("\nInitializing LUIS request w/ query=['{}']".format(query))
+        spell_check_api_key = "45a6cea0c733452bb628817af4e3fc54"  # expires in 30 days, must be renewed!
+        # **To refresh key, go -> "Publish" page in LUIS, check box to enable spell check, & follow link.
+        # Login with arnavpon@rwjms.rutgers.edu account! **
         luis_enpoint_url = "https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/" \
                            "1cd07ebb-3a30-4662-a655-bed6d8805aa4?subscription-key=3c42debb60f546b2bf166876a0f1ab0c&" \
-                           "timezoneOffset=0&spellCheck=true&verbose=true&q="
+                           "spellCheck=true&bing-spell-check-subscription-key={}&timezoneOffset=0&verbose=true&" \
+                           "q=".format(spell_check_api_key)
+
         self.__url = luis_enpoint_url + "{}".format(quote_plus(query))  # append URL FORMATTED query -> final URL
         self.__query = query  # cache the query (*need it to be logged to some data store*)
         self.__activity = activity  # cache the activity
@@ -817,7 +822,7 @@ class LUIS:  # handles interaction with LUIS framework
         elif len(self.findMatchingEntity("recognizerKeywords", ["medication", "medications", "medicine",
                                                                 "medicines", "pill", "pills", "supplement",
                                                                 "supplements"])) > 0 and \
-                ("do" in self.__query or "does" in self.__query):  # ACTIVE query (do/does) gets back medication list
+                ("do" in self.__query or "does" in self.__query):  # ACTIVE query (do/does) if for medication list
             self.__response = ""  # clear existing text
             if len(self.__patient.medications) == 0:  # no medications
                 pronoun, verb = self.modifyPronoun("do")
@@ -965,7 +970,7 @@ class LUIS:  # handles interaction with LUIS framework
             if symptom is not None:
                 if len(self.findMatchingEntity("recognizerKeywords", ["doctor", "emergency department", "physician",
                                                                       "ed", "treatment", "treated"])) > 0:
-                    # intent: was patient treated for symptoms?
+                    # intent: did patient seek treatment (go to doctor) for symptom?
                     self.__response = "No"  # always respond 'no'
                 else:  # question about medication usage for treatment
                     matches = list()  # list of medications used for the symptom
